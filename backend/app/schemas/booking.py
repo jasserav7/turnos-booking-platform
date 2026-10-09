@@ -32,6 +32,9 @@ class BookingOut(BaseModel):
     cancel_reason: str | None
     created_at: datetime
     updated_at: datetime
+    customer_name: str
+    provider_name: str
+    service_name: str
 
 
 class BookingListOut(BaseModel):

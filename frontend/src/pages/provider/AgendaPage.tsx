@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useBookingActionMutation, useBookingsQuery, type BookingAction } from '../../api/bookings'
-import { useBookingNames } from '../../api/lookups'
 import type { Booking } from '../../api/types'
 import { Alert } from '../../components/Alert'
 import { Button } from '../../components/Button'
@@ -22,7 +21,6 @@ export default function AgendaPage() {
   const to = mode === 'day' ? anchor : addDays(from, 6)
   const query = useBookingsQuery({ dateFrom: from, dateTo: to, limit: MAX_ITEMS })
   const action = useBookingActionMutation()
-  const names = useBookingNames()
   const step = mode === 'day' ? 1 : 7
 
   const days = mode === 'day' ? [from] : Array.from({ length: 7 }, (_, i) => addDays(from, i))
@@ -113,11 +111,11 @@ export default function AgendaPage() {
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-medium text-gray-900">
-                              {formatTime(booking.starts_at)} – {formatTime(booking.ends_at)} · {names.service(booking)}
+                              {formatTime(booking.starts_at)} – {formatTime(booking.ends_at)} · {booking.service_name}
                             </p>
                             <StatusBadge status={booking.status} />
                           </div>
-                          <p className="text-sm text-gray-600">{names.customer(booking)}</p>
+                          <p className="text-sm text-gray-600">{booking.customer_name}</p>
                           {booking.notes && <p className="text-sm text-gray-500">Notas: {booking.notes}</p>}
                           {booking.cancel_reason && <p className="text-sm text-gray-500">Motivo de cancelación: {booking.cancel_reason}</p>}
                         </div>

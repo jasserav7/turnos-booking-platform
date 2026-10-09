@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.core.deps import DbSession, require_roles
 from app.models import Service, User, UserRole
@@ -10,6 +10,7 @@ from app.schemas.catalog import (
     ProviderOut,
     ProviderServicesIn,
     ServiceIn,
+    ServiceListOut,
     ServiceOut,
     ServiceUpdateIn,
 )
@@ -40,6 +41,22 @@ def update_service(
 @router.delete("/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deactivate_service(service_id: uuid.UUID, actor: AdminUser, db: DbSession) -> None:
     catalog.deactivate_service(db, actor, service_id)
+
+
+@router.get("/admin/services", response_model=ServiceListOut)
+def admin_list_services(
+    actor: AdminUser,
+    db: DbSession,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ServiceListOut:
+    items, total = catalog.admin_list_services(db, actor, limit, offset)
+    return ServiceListOut(items=[ServiceOut.model_validate(s) for s in items], total=total)
+
+
+@router.get("/admin/providers/{provider_id}/services", response_model=list[ServiceOut])
+def get_provider_services(provider_id: uuid.UUID, actor: AdminUser, db: DbSession) -> list[Service]:
+    return catalog.get_provider_services(db, actor, provider_id)
 
 
 @router.put("/admin/providers/{provider_id}/services", response_model=list[ServiceOut])

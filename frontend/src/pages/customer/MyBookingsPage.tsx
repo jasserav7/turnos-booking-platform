@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useBookingsQuery } from '../../api/bookings'
-import { useBookingNames } from '../../api/lookups'
 import type { Booking, BookingStatus } from '../../api/types'
 import { Button } from '../../components/Button'
 import { CancelBookingDialog } from '../../components/CancelBookingDialog'
@@ -21,7 +20,6 @@ export default function MyBookingsPage() {
   const [offset, setOffset] = useState(0)
   const [cancelling, setCancelling] = useState<Booking | null>(null)
   const query = useBookingsQuery({ status: status || undefined, limit: PAGE_SIZE, offset })
-  const names = useBookingNames()
 
   return (
     <div>
@@ -61,11 +59,11 @@ export default function MyBookingsPage() {
               <li key={booking.id} className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-gray-900">{names.service(booking)}</p>
+                    <p className="font-medium text-gray-900">{booking.service_name}</p>
                     <StatusBadge status={booking.status} />
                   </div>
                   <p className="text-sm text-gray-600">
-                    {formatDateTime(booking.starts_at)} · con {names.provider(booking)}
+                    {formatDateTime(booking.starts_at)} · con {booking.provider_name}
                   </p>
                   {booking.cancel_reason && <p className="text-sm text-gray-500">Motivo de cancelación: {booking.cancel_reason}</p>}
                 </div>

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useBookingsQuery } from '../../api/bookings'
-import { useBookingNames } from '../../api/lookups'
 import type { BookingStatus } from '../../api/types'
 import { Alert } from '../../components/Alert'
 import { Button } from '../../components/Button'
@@ -29,7 +28,6 @@ export default function AdminBookingsPage() {
     limit: PAGE_SIZE,
     offset,
   })
-  const names = useBookingNames({ withCustomers: true })
   const filtered = Boolean(status || dateFrom || dateTo)
 
   function change(setter: (value: string) => void) {
@@ -97,9 +95,9 @@ export default function AdminBookingsPage() {
                 {query.data.items.map((booking) => (
                   <tr key={booking.id}>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-900">{formatDateTime(booking.starts_at)}</td>
-                    <td className="px-4 py-3 text-gray-700">{names.service(booking)}</td>
-                    <td className="px-4 py-3 text-gray-700">{names.customer(booking)}</td>
-                    <td className="px-4 py-3 text-gray-700">{names.provider(booking)}</td>
+                    <td className="px-4 py-3 text-gray-700">{booking.service_name}</td>
+                    <td className="px-4 py-3 text-gray-700">{booking.customer_name}</td>
+                    <td className="px-4 py-3 text-gray-700">{booking.provider_name}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={booking.status} />
                     </td>

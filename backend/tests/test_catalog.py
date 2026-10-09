@@ -232,3 +232,71 @@ def test_slots_range_validation(
     params["date_to"] = start.isoformat()
     params["service_id"] = str(make_service(session).id)
     assert client.get(url, params=params).status_code == 404
+
+
+@pytest.mark.parametrize("role", [UserRole.customer, UserRole.provider])
+def test_admin_catalog_endpoints_require_admin(
+    client: TestClient, make_user: Callable[..., User], role: UserRole
+) -> None:
+    headers = auth_headers(make_user(role=role))
+    provider = make_user(role=UserRole.provider)
+    assert client.get(f"{API}/admin/services", headers=headers).status_code == 403
+    response = client.get(f"{API}/admin/providers/{provider.id}/services", headers=headers)
+    assert response.status_code == 403
+    assert client.get(f"{API}/admin/services").status_code == 401
+
+
+def test_admin_lists_all_services_including_inactive(
+    client: TestClient, session: Session, make_user: Callable[..., User]
+) -> None:
+    headers = auth_headers(make_user(role=UserRole.admin))
+    active = make_service(session)
+    inactive = make_service(session)
+    inactive.is_active = False
+    session.flush()
+
+    body = client.get(f"{API}/admin/services", params={"limit": 100}, headers=headers).json()
+    by_id = {s["id"]: s for s in body["items"]}
+    assert by_id[str(active.id)]["is_active"] is True
+    assert by_id[str(inactive.id)]["is_active"] is False
+    assert body["total"] >= 2
+
+    page = client.get(f"{API}/admin/services", params={"limit": 1}, headers=headers).json()
+    assert len(page["items"]) == 1
+    assert page["total"] == body["total"]
+    second = client.get(
+        f"{API}/admin/services", params={"limit": 1, "offset": 1}, headers=headers
+    ).json()
+    assert second["items"][0]["id"] != page["items"][0]["id"]
+    too_big = client.get(f"{API}/admin/services", params={"limit": 101}, headers=headers)
+    assert too_big.status_code == 422
+
+
+def test_admin_gets_provider_services_including_inactive(
+    client: TestClient, session: Session, make_user: Callable[..., User]
+) -> None:
+    headers = auth_headers(make_user(role=UserRole.admin))
+    provider = make_user(role=UserRole.provider)
+    active, inactive, unassigned = (
+        make_service(session),
+        make_service(session),
+        make_service(session),
+    )
+    inactive.is_active = False
+    session.flush()
+    url = f"{API}/admin/providers/{provider.id}/services"
+
+    assert client.get(url, headers=headers).json() == []
+    payload = {"service_ids": [str(active.id), str(inactive.id)]}
+    assert client.put(url, json=payload, headers=headers).status_code == 200
+
+    response = client.get(url, headers=headers)
+    assert response.status_code == 200
+    assert {s["id"] for s in response.json()} == {str(active.id), str(inactive.id)}
+    assert str(unassigned.id) not in {s["id"] for s in response.json()}
+
+    customer = make_user()
+    for missing in (customer.id, uuid.uuid4()):
+        response = client.get(f"{API}/admin/providers/{missing}/services", headers=headers)
+        assert response.status_code == 404
+        assert response.json() == {"detail": "provider_not_found"}

@@ -1,11 +1,18 @@
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.service import Service
+    from app.models.user import User
 
 
 class BookingStatus(enum.StrEnum):
@@ -51,3 +58,20 @@ class Booking(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    # Lists load these with joinedload (see services/bookings.py) to avoid N+1 queries.
+    customer: Mapped[User] = relationship(foreign_keys=[customer_id])
+    provider: Mapped[User] = relationship(foreign_keys=[provider_id])
+    service: Mapped[Service] = relationship()
+
+    @property
+    def customer_name(self) -> str:
+        return self.customer.full_name
+
+    @property
+    def provider_name(self) -> str:
+        return self.provider.full_name
+
+    @property
+    def service_name(self) -> str:
+        return self.service.name

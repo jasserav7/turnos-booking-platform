@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -31,6 +31,15 @@ def _not_found(detail: str) -> HTTPException:
 def list_services(db: Session) -> list[Service]:
     query = select(Service).where(Service.is_active.is_(True)).order_by(Service.name, Service.id)
     return list(db.scalars(query))
+
+
+def admin_list_services(
+    db: Session, actor: User, limit: int, offset: int
+) -> tuple[list[Service], int]:
+    ensure_roles(actor, UserRole.admin)
+    total = db.scalar(select(func.count()).select_from(Service)) or 0
+    query = select(Service).order_by(Service.name, Service.id).limit(limit).offset(offset)
+    return list(db.scalars(query)), total
 
 
 def create_service(db: Session, actor: User, data: ServiceIn) -> Service:
@@ -69,13 +78,30 @@ def deactivate_service(db: Session, actor: User, service_id: uuid.UUID) -> None:
     db.commit()
 
 
+def _get_provider(db: Session, provider_id: uuid.UUID) -> User:
+    provider = db.get(User, provider_id)
+    if provider is None or provider.role != UserRole.provider:
+        raise _not_found("provider_not_found")
+    return provider
+
+
+def get_provider_services(db: Session, actor: User, provider_id: uuid.UUID) -> list[Service]:
+    ensure_roles(actor, UserRole.admin)
+    _get_provider(db, provider_id)
+    query = (
+        select(Service)
+        .join(ProviderService, ProviderService.service_id == Service.id)
+        .where(ProviderService.provider_id == provider_id)
+        .order_by(Service.name, Service.id)
+    )
+    return list(db.scalars(query))
+
+
 def set_provider_services(
     db: Session, actor: User, provider_id: uuid.UUID, service_ids: list[uuid.UUID]
 ) -> list[Service]:
     ensure_roles(actor, UserRole.admin)
-    provider = db.get(User, provider_id)
-    if provider is None or provider.role != UserRole.provider:
-        raise _not_found("provider_not_found")
+    _get_provider(db, provider_id)
     unique_ids = set(service_ids)
     services = list(db.scalars(select(Service).where(Service.id.in_(unique_ids))))
     if len(services) != len(unique_ids):

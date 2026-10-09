@@ -1,8 +1,6 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { apiRequest } from './client'
-import type { Service, ServiceIn, ServiceUpdateIn } from './types'
-
-const DEACTIVATED_KEY = ['services', 'deactivated'] as const
+import type { Service, ServiceIn, ServiceList, ServiceUpdateIn } from './types'
 
 export function useServicesQuery() {
   return useQuery({
@@ -11,35 +9,20 @@ export function useServicesQuery() {
   })
 }
 
-/**
- * GET /services only returns active services, so the ones deactivated during this
- * session are remembered in the cache to allow reactivating them.
- */
-export function useDeactivatedServices(): Service[] {
-  const { data } = useQuery({
-    queryKey: DEACTIVATED_KEY,
-    queryFn: () => [] as Service[],
-    staleTime: Infinity,
-    gcTime: Infinity,
+/** Every service, active or not (admin only). */
+export function useAdminServicesQuery(params: { limit?: number; offset?: number } = {}) {
+  return useQuery({
+    queryKey: ['services', 'admin', params],
+    queryFn: () => apiRequest<ServiceList>('/admin/services', { query: { limit: params.limit, offset: params.offset } }),
+    placeholderData: keepPreviousData,
   })
-  return data ?? []
-}
-
-function rememberDeactivated(client: QueryClient, service: Service): void {
-  client.setQueryData<Service[]>(DEACTIVATED_KEY, (prev = []) => [
-    ...prev.filter((s) => s.id !== service.id),
-    { ...service, is_active: false },
-  ])
-}
-
-function forgetDeactivated(client: QueryClient, id: string): void {
-  client.setQueryData<Service[]>(DEACTIVATED_KEY, (prev = []) => prev.filter((s) => s.id !== id))
 }
 
 function invalidateCatalog(client: QueryClient): Promise<void> {
   return Promise.all([
-    client.invalidateQueries({ queryKey: ['services', 'active'] }),
+    client.invalidateQueries({ queryKey: ['services'] }),
     client.invalidateQueries({ queryKey: ['providers'] }),
+    client.invalidateQueries({ queryKey: ['provider-services'] }),
   ]).then(() => undefined)
 }
 
@@ -56,22 +39,14 @@ export function useUpdateServiceMutation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: ServiceUpdateIn }) =>
       apiRequest<Service>(`/services/${id}`, { method: 'PATCH', body: data }),
-    onSuccess: (service) => {
-      if (service.is_active) forgetDeactivated(client, service.id)
-      else rememberDeactivated(client, service)
-      return invalidateCatalog(client)
-    },
+    onSuccess: () => invalidateCatalog(client),
   })
 }
 
 export function useDeactivateServiceMutation() {
   const client = useQueryClient()
   return useMutation({
-    mutationFn: (service: Service) =>
-      apiRequest<void>(`/services/${service.id}`, { method: 'DELETE' }),
-    onSuccess: (_data, service) => {
-      rememberDeactivated(client, service)
-      return invalidateCatalog(client)
-    },
+    mutationFn: (service: Service) => apiRequest<void>(`/services/${service.id}`, { method: 'DELETE' }),
+    onSuccess: () => invalidateCatalog(client),
   })
 }

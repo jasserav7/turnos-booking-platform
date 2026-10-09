@@ -14,6 +14,11 @@ class ServiceOut(BaseModel):
     is_active: bool
 
 
+class ServiceListOut(BaseModel):
+    items: list[ServiceOut]
+    total: int
+
+
 class ServiceIn(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str = Field(default="", max_length=5000)
