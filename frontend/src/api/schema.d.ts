@@ -211,6 +211,23 @@ export interface paths {
         patch: operations["update_service_api_v1_services__service_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin List Services */
+        get: operations["admin_list_services_api_v1_admin_services_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/providers/{provider_id}/services": {
         parameters: {
             query?: never;
@@ -218,7 +235,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Provider Services */
+        get: operations["get_provider_services_api_v1_admin_providers__provider_id__services_get"];
         /** Set Provider Services */
         put: operations["set_provider_services_api_v1_admin_providers__provider_id__services_put"];
         post?: never;
@@ -561,6 +579,12 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /** Customer Name */
+            customer_name: string;
+            /** Provider Name */
+            provider_name: string;
+            /** Service Name */
+            service_name: string;
         };
         /**
          * BookingStatus
@@ -644,6 +668,13 @@ export interface components {
              * @default 0
              */
             price_cents: number;
+        };
+        /** ServiceListOut */
+        ServiceListOut: {
+            /** Items */
+            items: components["schemas"]["ServiceOut"][];
+            /** Total */
+            total: number;
         };
         /** ServiceOut */
         ServiceOut: {
@@ -1258,6 +1289,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServiceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_services_api_v1_admin_services_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_provider_services_api_v1_admin_providers__provider_id__services_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceOut"][];
                 };
             };
             /** @description Validation Error */

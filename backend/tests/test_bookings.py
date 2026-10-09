@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, event
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -363,3 +363,60 @@ def test_concurrent_bookings_only_one_wins(
         app.dependency_overrides.clear()
 
     assert sorted(statuses) == [201, 409]
+
+
+def test_bookings_include_names(
+    client: TestClient, session: Session, world: dict[str, Any], make_user: Callable[..., User]
+) -> None:
+    customer, provider, service = world["customer"], world["provider"], world["service"]
+    created = client.post(
+        f"{API}/bookings", json=_payload(world, tomorrow_at(10)), headers=auth_headers(customer)
+    )
+    assert created.status_code == 201
+    expected = {
+        "customer_name": customer.full_name,
+        "provider_name": provider.full_name,
+        "service_name": service.name,
+    }
+    assert {k: created.json()[k] for k in expected} == expected
+    booking_id = created.json()["id"]
+
+    other = insert_booking(session, make_user(), provider, service, tomorrow_at(12))
+    for actor in (customer, provider, world["admin"]):
+        detail = client.get(f"{API}/bookings/{booking_id}", headers=auth_headers(actor)).json()
+        assert {k: detail[k] for k in expected} == expected
+        items = client.get(f"{API}/bookings", headers=auth_headers(actor)).json()["items"]
+        mine = next(item for item in items if item["id"] == booking_id)
+        assert {k: mine[k] for k in expected} == expected
+
+    customer_items = client.get(f"{API}/bookings", headers=auth_headers(customer)).json()["items"]
+    assert [item["id"] for item in customer_items] == [booking_id]
+    assert str(other.id) not in {i["id"] for i in customer_items}
+
+
+def test_booking_list_has_no_n_plus_one(
+    client: TestClient, session: Session, world: dict[str, Any], make_user: Callable[..., User]
+) -> None:
+    provider = world["provider"]
+    headers = auth_headers(provider)
+
+    def count_queries() -> int:
+        statements: list[str] = []
+
+        def listener(*args: Any) -> None:
+            statements.append(args[2])
+
+        event.listen(test_engine, "before_cursor_execute", listener)
+        try:
+            response = client.get(f"{API}/bookings", headers=headers)
+        finally:
+            event.remove(test_engine, "before_cursor_execute", listener)
+        assert response.status_code == 200
+        return len(statements)
+
+    insert_booking(session, make_user(), provider, world["service"], tomorrow_at(9))
+    baseline = count_queries()
+    for hour in (10, 11, 12, 13):
+        other_service = make_service(session)
+        insert_booking(session, make_user(), provider, other_service, tomorrow_at(hour))
+    assert count_queries() == baseline

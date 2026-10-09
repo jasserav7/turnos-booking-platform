@@ -3,10 +3,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
+  useAdminServicesQuery,
   useCreateServiceMutation,
   useDeactivateServiceMutation,
-  useDeactivatedServices,
-  useServicesQuery,
   useUpdateServiceMutation,
 } from '../../api/services'
 import type { Service } from '../../api/types'
@@ -14,11 +13,14 @@ import { Alert } from '../../components/Alert'
 import { Button } from '../../components/Button'
 import { Modal } from '../../components/Modal'
 import { PageHeader } from '../../components/PageHeader'
+import { Pagination } from '../../components/Pagination'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { TextAreaField } from '../../components/TextAreaField'
 import { TextField } from '../../components/TextField'
 import { errorMessage } from '../../lib/errors'
 import { formatPrice } from '../../lib/format'
+
+const PAGE_SIZE = 20
 
 const serviceSchema = z.object({
   name: z.string().trim().min(1, 'Ingresa un nombre.').max(255, 'Máximo 255 caracteres.'),
@@ -93,13 +95,13 @@ function ServiceFormModal({ service, open, onClose }: { service: Service | null;
 }
 
 export default function AdminServicesPage() {
-  const query = useServicesQuery()
-  const deactivated = useDeactivatedServices()
+  const [offset, setOffset] = useState(0)
+  const query = useAdminServicesQuery({ limit: PAGE_SIZE, offset })
   const deactivate = useDeactivateServiceMutation()
   const update = useUpdateServiceMutation()
   const [editing, setEditing] = useState<Service | null>(null)
   const [formOpen, setFormOpen] = useState(false)
-  const rows = [...(query.data ?? []), ...deactivated.filter((s) => !query.data?.some((a) => a.id === s.id))]
+  const rows = query.data?.items ?? []
   const toggleError = deactivate.error ?? update.error
 
   function openForm(service: Service | null) {
@@ -111,7 +113,7 @@ export default function AdminServicesPage() {
     <div>
       <PageHeader
         title="Servicios"
-        description="La API solo lista servicios activos; los que desactives aquí podrás reactivarlos durante esta sesión."
+        description="Crea, edita y activa o desactiva los servicios del catálogo."
         actions={
           <Button block={false} onClick={() => openForm(null)}>
             Nuevo servicio
@@ -127,65 +129,68 @@ export default function AdminServicesPage() {
       {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
       {query.isSuccess && rows.length === 0 && <EmptyState title="Todavía no hay servicios">Crea el primero con “Nuevo servicio”.</EmptyState>}
       {query.isSuccess && rows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50 text-left text-gray-600">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Nombre</th>
-                <th scope="col" className="px-4 py-3 font-medium">Duración</th>
-                <th scope="col" className="px-4 py-3 font-medium">Precio</th>
-                <th scope="col" className="px-4 py-3 font-medium">Estado</th>
-                <th scope="col" className="px-4 py-3 font-medium"><span className="sr-only">Acciones</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {rows.map((service) => (
-                <tr key={service.id}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{service.name}</p>
-                    {service.description && <p className="max-w-xs truncate text-gray-500">{service.description}</p>}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">{service.duration_minutes} min</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700">{formatPrice(service.price_cents)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${service.is_active ? 'bg-green-50 text-green-800 ring-green-600/30' : 'bg-gray-100 text-gray-700 ring-gray-500/30'}`}>
-                      {service.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="secondary" size="sm" block={false} onClick={() => openForm(service)} aria-label={`Editar ${service.name}`}>
-                        Editar
-                      </Button>
-                      {service.is_active ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          block={false}
-                          loading={deactivate.isPending && deactivate.variables?.id === service.id}
-                          onClick={() => deactivate.mutate(service)}
-                          aria-label={`Desactivar ${service.name}`}
-                        >
-                          Desactivar
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          block={false}
-                          loading={update.isPending && update.variables?.id === service.id}
-                          onClick={() => update.mutate({ id: service.id, data: { is_active: true } })}
-                          aria-label={`Activar ${service.name}`}
-                        >
-                          Activar
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+        <>
+          <div aria-busy={query.isFetching} className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50 text-left text-gray-600">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-medium">Nombre</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Duración</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Precio</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Estado</th>
+                  <th scope="col" className="px-4 py-3 font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.map((service) => (
+                  <tr key={service.id}>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900">{service.name}</p>
+                      {service.description && <p className="max-w-xs truncate text-gray-500">{service.description}</p>}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-700">{service.duration_minutes} min</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-700">{formatPrice(service.price_cents)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${service.is_active ? 'bg-green-50 text-green-800 ring-green-600/30' : 'bg-gray-100 text-gray-700 ring-gray-500/30'}`}>
+                        {service.is_active ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" block={false} onClick={() => openForm(service)} aria-label={`Editar ${service.name}`}>
+                          Editar
+                        </Button>
+                        {service.is_active ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            block={false}
+                            loading={deactivate.isPending && deactivate.variables?.id === service.id}
+                            onClick={() => deactivate.mutate(service)}
+                            aria-label={`Desactivar ${service.name}`}
+                          >
+                            Desactivar
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            block={false}
+                            loading={update.isPending && update.variables?.id === service.id}
+                            onClick={() => update.mutate({ id: service.id, data: { is_active: true } })}
+                            aria-label={`Activar ${service.name}`}
+                          >
+                            Activar
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination total={query.data.total} limit={PAGE_SIZE} offset={offset} onChange={setOffset} />
+        </>
       )}
       <ServiceFormModal service={editing} open={formOpen} onClose={() => setFormOpen(false)} />
     </div>

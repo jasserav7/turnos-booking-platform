@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core import notifications
 from app.core.config import get_settings
@@ -27,6 +27,12 @@ def _visible_to(query: Select[tuple[Booking]], actor: User) -> Select[tuple[Book
     if actor.role == UserRole.provider:
         return query.where(Booking.provider_id == actor.id)
     return query
+
+
+def _with_names(query: Select[tuple[Booking]]) -> Select[tuple[Booking]]:
+    return query.options(
+        joinedload(Booking.customer), joinedload(Booking.provider), joinedload(Booking.service)
+    )
 
 
 def _local_midnight_utc(day: date) -> datetime:
@@ -109,12 +115,14 @@ def list_bookings(
     if date_to is not None:
         query = query.where(Booking.starts_at < _local_midnight_utc(date_to + timedelta(days=1)))
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    items = db.scalars(query.order_by(Booking.starts_at, Booking.id).limit(limit).offset(offset))
+    ordered = query.order_by(Booking.starts_at, Booking.id).limit(limit).offset(offset)
+    items = db.scalars(_with_names(ordered))
     return list(items), total
 
 
 def get_booking(db: Session, actor: User, booking_id: uuid.UUID) -> Booking:
-    booking = db.scalar(_visible_to(select(Booking).where(Booking.id == booking_id), actor))
+    query = _visible_to(select(Booking).where(Booking.id == booking_id), actor)
+    booking = db.scalar(_with_names(query))
     if booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="booking_not_found")
     return booking
