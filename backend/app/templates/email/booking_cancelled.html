@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ recipient.name }}:</p>
+<p>La siguiente reserva fue <strong>cancelada</strong>{% if booking.cancelled_by_name %} por {{ booking.cancelled_by_name }}{% endif %}.</p>
+{% include "_booking_details.html" %}
+{% if booking.cancel_reason %}<p><strong>Motivo:</strong> {{ booking.cancel_reason }}</p>{% endif %}
+{% with href=bookings_url, label="Ver reservas" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

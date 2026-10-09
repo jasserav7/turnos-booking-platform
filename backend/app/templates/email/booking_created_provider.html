@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ booking.provider.name }}:</p>
+<p>Tienes una nueva reserva <strong>pendiente de confirmar</strong>.</p>
+{% include "_booking_details.html" %}
+{% if booking.notes %}<p><strong>Notas del cliente:</strong> {{ booking.notes }}</p>{% endif %}
+{% with href=bookings_url, label="Revisar mi agenda" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

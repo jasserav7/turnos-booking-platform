@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ booking.customer.name }}:</p>
+<p>Te recordamos que tienes una cita en las próximas 24 horas.</p>
+{% include "_booking_details.html" %}
+<p>Si no puedes asistir, cancélala desde la aplicación para liberar el horario.</p>
+{% with href=bookings_url, label="Ver mis reservas" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

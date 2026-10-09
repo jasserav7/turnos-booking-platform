@@ -1,0 +1,10 @@
+Hola {{ recipient.name }}:
+
+La siguiente reserva fue cancelada{% if booking.cancelled_by_name %} por {{ booking.cancelled_by_name }}{% endif %}.
+
+{% include "_booking_details.txt" %}
+{% if booking.cancel_reason %}
+Motivo: {{ booking.cancel_reason }}
+{% endif %}
+
+Ver reservas: {{ bookings_url }}

@@ -1,0 +1,10 @@
+Hola {{ booking.provider.name }}:
+
+Tienes una nueva reserva pendiente de confirmar.
+
+{% include "_booking_details.txt" %}
+{% if booking.notes %}
+Notas del cliente: {{ booking.notes }}
+{% endif %}
+
+Revisar mi agenda: {{ bookings_url }}

@@ -1,6 +1,7 @@
 import os
 import uuid
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 
 import pytest
 from alembic.config import Config
@@ -15,6 +16,7 @@ TEST_DATABASE_URL = get_settings().test_database_url
 if not TEST_DATABASE_URL:
     raise RuntimeError("TEST_DATABASE_URL must be set to run tests")
 
+from app.core import email as email_core  # noqa: E402
 from app.core.rate_limit import limiter  # noqa: E402
 from app.core.security import create_access_token, hash_password  # noqa: E402
 from app.db.session import get_db  # noqa: E402
@@ -58,6 +60,32 @@ def client(session: Session) -> Iterator[TestClient]:
 @pytest.fixture(autouse=True)
 def _reset_rate_limits() -> None:
     limiter.reset()
+
+
+@dataclass
+class SentEmail:
+    to: str
+    subject: str
+    html: str
+    text: str
+
+
+@dataclass
+class FakeEmailSender:
+    messages: list[SentEmail] = field(default_factory=list)
+
+    def send(self, to: str, subject: str, html: str, text: str) -> None:
+        self.messages.append(SentEmail(to, subject, html, text))
+
+    def to(self, address: str) -> list[SentEmail]:
+        return [m for m in self.messages if m.to == address]
+
+
+@pytest.fixture(autouse=True)
+def outbox(monkeypatch: pytest.MonkeyPatch) -> FakeEmailSender:
+    sender = FakeEmailSender()
+    monkeypatch.setattr(email_core, "get_email_sender", lambda: sender)
+    return sender
 
 
 @pytest.fixture

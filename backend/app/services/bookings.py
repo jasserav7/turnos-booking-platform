@@ -2,14 +2,14 @@ import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notifications
 from app.core.config import get_settings
-from app.models import Booking, BookingStatus, User, UserRole
+from app.models import Booking, BookingStatus, Service, User, UserRole
 from app.schemas.booking import BookingIn
 from app.services import catalog
 from app.services.permissions import ensure_roles
@@ -38,7 +38,30 @@ def _is_exclusion_violation(exc: IntegrityError) -> bool:
     return getattr(exc.orig, "sqlstate", None) == EXCLUSION_VIOLATION
 
 
-def create_booking(db: Session, actor: User, data: BookingIn) -> Booking:
+def _recipient(user: User) -> notifications.Recipient:
+    return notifications.Recipient(email=user.email, name=user.full_name)
+
+
+def booking_email_data(db: Session, booking: Booking) -> notifications.BookingEmailData:
+    customer = db.get(User, booking.customer_id)
+    provider = db.get(User, booking.provider_id)
+    service = db.get(Service, booking.service_id)
+    cancelled_by = db.get(User, booking.cancelled_by) if booking.cancelled_by else None
+    assert customer is not None and provider is not None and service is not None
+    return notifications.BookingEmailData(
+        booking_id=booking.id,
+        customer=_recipient(customer),
+        provider=_recipient(provider),
+        service_name=service.name,
+        starts_at=booking.starts_at,
+        ends_at=booking.ends_at,
+        notes=booking.notes,
+        cancel_reason=booking.cancel_reason,
+        cancelled_by_name=cancelled_by.full_name if cancelled_by else None,
+    )
+
+
+def create_booking(db: Session, actor: User, data: BookingIn, tasks: BackgroundTasks) -> Booking:
     ensure_roles(actor, UserRole.customer)
     service = catalog.get_bookable(db, data.provider_id, data.service_id)
     starts_at = data.starts_at.astimezone(UTC)
@@ -65,7 +88,7 @@ def create_booking(db: Session, actor: User, data: BookingIn) -> Booking:
             raise _conflict("slot_unavailable") from exc
         raise
     db.refresh(booking)
-    notifications.notify_booking_created(booking)
+    tasks.add_task(notifications.notify_booking_created, booking_email_data(db, booking))
     return booking
 
 
@@ -103,18 +126,26 @@ def _save(db: Session, booking: Booking) -> Booking:
     return booking
 
 
-def confirm_booking(db: Session, actor: User, booking_id: uuid.UUID) -> Booking:
+def confirm_booking(
+    db: Session, actor: User, booking_id: uuid.UUID, tasks: BackgroundTasks
+) -> Booking:
     booking = get_booking(db, actor, booking_id)
     ensure_roles(actor, UserRole.provider, UserRole.admin)
     if booking.status != BookingStatus.pending:
         raise _conflict("invalid_transition")
     booking.status = BookingStatus.confirmed
     _save(db, booking)
-    notifications.notify_booking_confirmed(booking)
+    tasks.add_task(notifications.notify_booking_confirmed, booking_email_data(db, booking))
     return booking
 
 
-def cancel_booking(db: Session, actor: User, booking_id: uuid.UUID, reason: str | None) -> Booking:
+def cancel_booking(
+    db: Session,
+    actor: User,
+    booking_id: uuid.UUID,
+    reason: str | None,
+    tasks: BackgroundTasks,
+) -> Booking:
     booking = get_booking(db, actor, booking_id)
     if booking.status not in (BookingStatus.pending, BookingStatus.confirmed):
         raise _conflict("invalid_transition")
@@ -126,7 +157,7 @@ def cancel_booking(db: Session, actor: User, booking_id: uuid.UUID, reason: str 
     booking.cancelled_by = actor.id
     booking.cancel_reason = reason
     _save(db, booking)
-    notifications.notify_booking_cancelled(booking)
+    tasks.add_task(notifications.notify_booking_cancelled, booking_email_data(db, booking))
     return booking
 
 

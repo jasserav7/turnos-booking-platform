@@ -1,0 +1,9 @@
+Hola {{ booking.customer.name }}:
+
+Te recordamos que tienes una cita en las próximas 24 horas.
+
+{% include "_booking_details.txt" %}
+
+Si no puedes asistir, cancélala desde la aplicación para liberar el horario.
+
+Ver mis reservas: {{ bookings_url }}

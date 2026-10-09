@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import jwt
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -76,7 +76,7 @@ def _user_from_link_token(db: Session, token: str, token_type: TokenType) -> tup
     return user, payload
 
 
-def register(db: Session, data: RegisterIn) -> User:
+def register(db: Session, data: RegisterIn, tasks: BackgroundTasks) -> User:
     email = _normalize_email(data.email)
     if db.scalar(select(User.id).where(User.email == email)) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email_taken")
@@ -94,7 +94,7 @@ def register(db: Session, data: RegisterIn) -> User:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email_taken") from exc
     db.refresh(user)
-    notifications.notify_verify_email(user, create_verify_token(user.id))
+    tasks.add_task(notifications.notify_verify_email, user, create_verify_token(user.id))
     return user
 
 
@@ -151,11 +151,13 @@ def verify_email(db: Session, token: str) -> None:
         db.commit()
 
 
-def forgot_password(db: Session, email: str) -> None:
+def forgot_password(db: Session, email: str, tasks: BackgroundTasks) -> None:
     user = db.scalar(select(User).where(User.email == _normalize_email(email)))
     if user is not None and user.is_active:
-        notifications.notify_password_reset(
-            user, create_reset_token(user.id, user.password_hash)
+        tasks.add_task(
+            notifications.notify_password_reset,
+            user,
+            create_reset_token(user.id, user.password_hash),
         )
 
 

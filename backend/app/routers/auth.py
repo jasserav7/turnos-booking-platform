@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Request, Response, status
 
 from app.core.config import get_settings
 from app.core.deps import DbSession
@@ -38,8 +38,8 @@ def _token_response(response: Response, result: auth_service.AuthResult) -> Toke
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterIn, db: DbSession) -> User:
-    return auth_service.register(db, data)
+def register(data: RegisterIn, db: DbSession, tasks: BackgroundTasks) -> User:
+    return auth_service.register(db, data, tasks)
 
 
 @router.post("/login", response_model=TokenOut)
@@ -73,8 +73,10 @@ def verify_email(token: str, db: DbSession) -> dict[str, str]:
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/minute")
-def forgot_password(request: Request, data: ForgotPasswordIn, db: DbSession) -> dict[str, str]:
-    auth_service.forgot_password(db, data.email)
+def forgot_password(
+    request: Request, data: ForgotPasswordIn, db: DbSession, tasks: BackgroundTasks
+) -> dict[str, str]:
+    auth_service.forgot_password(db, data.email, tasks)
     return {"detail": "accepted"}
 
 
