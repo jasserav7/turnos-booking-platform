@@ -39,5 +39,19 @@ services:
     volumes:
       - ./backend:/app
 
+  web:
+    build: ./frontend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+      VITE_APP_TIMEZONE: ${VITE_APP_TIMEZONE:-America/Bogota}
+      VITE_USE_POLLING: "true"
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
 volumes:
   pgdata:

@@ -34,3 +34,14 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [04] Programación del job cada 15 min: cron `*/15 * * * * cd /app && python -m app.jobs.send_reminders`; en AWS, tarea programada de ECS (EventBridge Scheduler `rate(15 minutes)`) con la imagen de `api` y comando `python -m app.jobs.send_reminders`; o GitHub Actions con `on: schedule: - cron: '*/15 * * * *'` ejecutando el mismo comando con `DATABASE_URL`/`SMTP_*` como secrets.
 - [04] `alembic/env.py` usa `fileConfig(..., disable_existing_loggers=False)` — migrar en el mismo proceso (tests) silenciaba los loggers de la app.
 - [04] Los tests usan un `FakeEmailSender` autouse en `conftest.py` — ningún test envía correo real.
+- [05] ESLint (flat config clásica del template de Vite: `@eslint/js`, `typescript-eslint`, `react-hooks`, `react-refresh`) en lugar de oxlint — el `create-vite` actual trae oxlint, pero AGENTS.md fija ESLint.
+- [05] TypeScript `~5.9` en lugar del 6.x del scaffold — `openapi-typescript` 7 exige TypeScript 5 como peer.
+- [05] Tailwind v4 con el plugin oficial `@tailwindcss/vite` — es la integración estándar de Tailwind con Vite.
+- [05] `tsconfig.json` raíz es un proyecto plano sobre `src` (hereda de `tsconfig.app.json`) para que `npx tsc --noEmit` compruebe el código; el build usa `tsc -b tsconfig.app.json tsconfig.node.json`.
+- [05] `src/api/schema.d.ts` generado se versiona — el build y la CI no dependen de tener la API corriendo.
+- [05] La sesión se restaura al cargar con `POST /auth/refresh`; las llamadas a refresh concurrentes (incluido el doble montaje de StrictMode) comparten una sola petición para no disparar la detección de reutilización.
+- [05] Un 401 en cualquier petición intenta refresh una vez y reintenta; si el refresh falla se limpia la sesión y las rutas protegidas redirigen a `/login` (guardando la ruta de origen).
+- [05] El registro no inicia sesión: muestra "revisa tu correo" y enlaza al login, porque `POST /auth/register` no devuelve tokens.
+- [05] Las rutas de las secciones de cada rol (`/book`, `/bookings`, `/agenda`, `/availability`, `/admin/*`) existen ya protegidas por rol con una página "Próximamente" — las vistas reales llegan en las siguientes fases.
+- [05] `/login`, `/register` y `/forgot-password` redirigen al inicio si ya hay sesión; `/verify-email` y `/reset-password` funcionan con o sin sesión.
+- [05] El servicio `web` de Docker corre `vite` en modo desarrollo con `VITE_USE_POLLING=true` — los eventos de archivos no atraviesan los bind mounts en Windows.
