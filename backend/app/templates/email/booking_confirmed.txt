@@ -1,0 +1,7 @@
+Hola {{ booking.customer.name }}:
+
+¡Tu reserva está confirmada! Te esperamos.
+
+{% include "_booking_details.txt" %}
+
+Ver mis reservas: {{ bookings_url }}

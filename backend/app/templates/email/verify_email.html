@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ name }}:</p>
+<p>Gracias por registrarte en Turnos. Confirma tu correo electrónico con el siguiente botón.</p>
+{% with href=link, label="Confirmar mi correo" %}{% include "_button.html" %}{% endwith %}
+<p style="font-size:13px;color:#71717a;">Si el botón no funciona, copia este enlace en tu navegador:<br><a href="{{ link }}">{{ link }}</a></p>
+{% endblock %}

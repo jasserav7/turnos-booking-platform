@@ -25,3 +25,12 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [03] `complete` no notifica — solo existen los stubs `notify_booking_created|confirmed|cancelled` que pide la fase.
 - [03] `GET /bookings` ordena por `starts_at` ascendente; `GET /admin/stats` agrupa por día local de `starts_at` (últimos 30 días incluido hoy) y el top 5 cuenta reservas en cualquier estado.
 - [03] Un slot es válido si su inicio cae en `[now + MIN_NOTICE_MINUTES, now + BOOKING_HORIZON_DAYS]`; el avance por duración se calcula en UTC desde el inicio local de cada regla.
+- [04] Rama `feat/fase-04-emails` creada desde `origin/main` actualizado (PR #3 de la fase 03 ya fusionado) — la rama no existía al empezar la fase.
+- [04] Los servicios reciben `BackgroundTasks` y encolan los correos tras el `commit`, pasando una instantánea plana (`BookingEmailData`/`Recipient`) — el envío nunca toca la sesión ni ocurre dentro de una transacción.
+- [04] Destinatarios: reserva creada → cliente y profesional; confirmada → cliente; cancelada → cliente y profesional; recordatorio → cliente; completar no envía correo.
+- [04] Los enlaces de reservas en los correos apuntan a `FRONTEND_URL/bookings`; las fechas se muestran en español en `APP_TIMEZONE` sin depender del locale del sistema.
+- [04] El job de recordatorios marca `reminder_sent_at` y hace commit antes de enviar (at-most-once, con `FOR UPDATE SKIP LOCKED`) — correrlo dos veces o en paralelo no duplica correos; si el SMTP falla, ese recordatorio se pierde y queda en el log.
+- [04] Ventana del recordatorio: reservas `confirmed` con `now < starts_at <= now + 24h`.
+- [04] Programación del job cada 15 min: cron `*/15 * * * * cd /app && python -m app.jobs.send_reminders`; en AWS, tarea programada de ECS (EventBridge Scheduler `rate(15 minutes)`) con la imagen de `api` y comando `python -m app.jobs.send_reminders`; o GitHub Actions con `on: schedule: - cron: '*/15 * * * *'` ejecutando el mismo comando con `DATABASE_URL`/`SMTP_*` como secrets.
+- [04] `alembic/env.py` usa `fileConfig(..., disable_existing_loggers=False)` — migrar en el mismo proceso (tests) silenciaba los loggers de la app.
+- [04] Los tests usan un `FakeEmailSender` autouse en `conftest.py` — ningún test envía correo real.

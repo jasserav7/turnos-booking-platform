@@ -11,7 +11,7 @@ from app.db.base import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Allow tests to point Alembic at another database via env var override.
 database_url = os.environ.get("ALEMBIC_DATABASE_URL") or get_settings().database_url

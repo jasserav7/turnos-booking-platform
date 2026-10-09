@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ booking.customer.name }}:</p>
+<p>¡Tu reserva está <strong>confirmada</strong>! Te esperamos.</p>
+{% include "_booking_details.html" %}
+{% with href=bookings_url, label="Ver mis reservas" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

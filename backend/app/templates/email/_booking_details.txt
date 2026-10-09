@@ -1,0 +1,4 @@
+Servicio: {{ booking.service_name }}
+Fecha: {{ when }}
+Profesional: {{ booking.provider.name }}
+Cliente: {{ booking.customer.name }}

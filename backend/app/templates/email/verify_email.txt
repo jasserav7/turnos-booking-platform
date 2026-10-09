@@ -1,0 +1,7 @@
+Hola {{ name }}:
+
+Gracias por registrarte en Turnos. Confirma tu correo electrónico abriendo este enlace:
+
+{{ link }}
+
+Si no creaste esta cuenta, ignora este mensaje.

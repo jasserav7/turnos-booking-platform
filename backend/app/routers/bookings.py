@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, status
 
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.models import Booking, BookingStatus, User, UserRole
@@ -16,8 +16,10 @@ StaffUser = Annotated[User, Depends(require_roles(UserRole.provider, UserRole.ad
 
 
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
-def create_booking(data: BookingIn, actor: CustomerUser, db: DbSession) -> Booking:
-    return bookings.create_booking(db, actor, data)
+def create_booking(
+    data: BookingIn, actor: CustomerUser, db: DbSession, tasks: BackgroundTasks
+) -> Booking:
+    return bookings.create_booking(db, actor, data, tasks)
 
 
 @router.get("", response_model=BookingListOut)
@@ -42,8 +44,10 @@ def get_booking(booking_id: uuid.UUID, actor: CurrentUser, db: DbSession) -> Boo
 
 
 @router.post("/{booking_id}/confirm", response_model=BookingOut)
-def confirm_booking(booking_id: uuid.UUID, actor: StaffUser, db: DbSession) -> Booking:
-    return bookings.confirm_booking(db, actor, booking_id)
+def confirm_booking(
+    booking_id: uuid.UUID, actor: StaffUser, db: DbSession, tasks: BackgroundTasks
+) -> Booking:
+    return bookings.confirm_booking(db, actor, booking_id, tasks)
 
 
 @router.post("/{booking_id}/cancel", response_model=BookingOut)
@@ -51,9 +55,10 @@ def cancel_booking(
     booking_id: uuid.UUID,
     actor: CurrentUser,
     db: DbSession,
+    tasks: BackgroundTasks,
     data: Annotated[BookingCancelIn | None, Body()] = None,
 ) -> Booking:
-    return bookings.cancel_booking(db, actor, booking_id, data.reason if data else None)
+    return bookings.cancel_booking(db, actor, booking_id, data.reason if data else None, tasks)
 
 
 @router.post("/{booking_id}/complete", response_model=BookingOut)

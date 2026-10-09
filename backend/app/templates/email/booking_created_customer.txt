@@ -1,0 +1,7 @@
+Hola {{ booking.customer.name }}:
+
+Recibimos tu reserva. Está pendiente de confirmación por parte del profesional; te avisaremos cuando la confirme.
+
+{% include "_booking_details.txt" %}
+
+Ver mis reservas: {{ bookings_url }}
