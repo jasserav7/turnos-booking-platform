@@ -45,3 +45,13 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [05] Las rutas de las secciones de cada rol (`/book`, `/bookings`, `/agenda`, `/availability`, `/admin/*`) existen ya protegidas por rol con una página "Próximamente" — las vistas reales llegan en las siguientes fases.
 - [05] `/login`, `/register` y `/forgot-password` redirigen al inicio si ya hay sesión; `/verify-email` y `/reset-password` funcionan con o sin sesión.
 - [05] El servicio `web` de Docker corre `vite` en modo desarrollo con `VITE_USE_POLLING=true` — los eventos de archivos no atraviesan los bind mounts en Windows.
+- [06] `GET /services` solo devuelve servicios activos y la API no tiene forma de listar inactivos: el panel guarda en caché (solo durante la sesión) los que se desactivan para poder reactivarlos con `PATCH is_active=true` — un servicio desactivado en otra sesión no se puede reactivar desde la UI hasta que la API ofrezca un listado de inactivos.
+- [06] `BookingOut` solo trae ids: los nombres de servicio y profesional se resuelven con `GET /services` y `GET /providers`; el admin resuelve clientes con la primera página (100) de `GET /admin/users?role=customer`; el provider ve "Cliente <id corto>" porque no tiene acceso a datos de usuarios. Lo ideal sería que la API devolviera los nombres en la reserva.
+- [06] No existe "servicios de un profesional": la pantalla Profesionales construye la asignación consultando `GET /providers?service_id=` por cada servicio activo; al guardar, el `PUT` reemplaza la lista, así que se pierden asignaciones a servicios inactivos.
+- [06] Nueva sección admin "Profesionales" (`/admin/providers`) en la navegación para asignar servicios; los profesionales se crean cambiando el rol en "Usuarios".
+- [06] En "Mis reservas" y en la agenda el botón Cancelar se muestra para `pending|confirmed`; la regla de `CANCEL_MIN_HOURS` la aplica la API y su error (`cancellation_window_closed`) se muestra en el diálogo.
+- [06] "Completar" en la agenda solo se habilita cuando la cita ya empezó (misma regla que la API).
+- [06] La agenda pide hasta 100 reservas por rango (día o semana lunes–domingo) y avisa si hay más.
+- [06] Los bloqueos se capturan con `datetime-local` interpretado en `VITE_APP_TIMEZONE` y se envían en UTC.
+- [06] Precios: el formulario de servicios usa pesos (COP) y envía `price_cents = round(precio × 100)`.
+- [06] Las páginas de cada rol se cargan con `lazy` de React Router (code splitting) para mantener el bundle inicial por debajo de 500 kB.

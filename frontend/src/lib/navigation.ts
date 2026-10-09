@@ -16,6 +16,7 @@ export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   ],
   admin: [
     { to: '/admin/services', label: 'Servicios' },
+    { to: '/admin/providers', label: 'Profesionales' },
     { to: '/admin/users', label: 'Usuarios' },
     { to: '/admin/bookings', label: 'Reservas' },
     { to: '/admin/stats', label: 'Estadísticas' },
