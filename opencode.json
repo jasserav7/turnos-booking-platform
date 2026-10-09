@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-opus-5-5",
+  "small_model": "anthropic/claude-haiku-5-5",
+  "default_agent": "build",
+  "agent": {
+    "build": { "steps": 60 }
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "pytest*": "allow",
+      "ruff*": "allow",
+      "alembic*": "allow",
+      "npm run *": "allow",
+      "npx tsc*": "allow",
+      "docker compose *": "allow",
+      "git push*": "ask",
+      "rm -rf*": "deny"
+    }
+  },
+  "command": {
+    "fase": {
+      "description": "Ejecuta un prompt de fase",
+      "template": "Lee prompts/$ARGUMENTS y ejecútalo completo siguiendo AGENTS.md."
+    }
+  }
+}
