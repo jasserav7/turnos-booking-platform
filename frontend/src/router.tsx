@@ -1,7 +1,8 @@
+import type { ComponentType } from 'react'
 import { createBrowserRouter } from 'react-router'
 import { GuestRoute, ProtectedRoute } from './auth/ProtectedRoute'
 import { Layout } from './components/Layout'
-import ComingSoonPage from './pages/ComingSoonPage'
+import { FullPageSpinner } from './components/Spinner'
 import ForbiddenPage from './pages/ForbiddenPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
@@ -11,9 +12,13 @@ import RegisterPage from './pages/RegisterPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 
+// Role sections are loaded on demand to keep the initial bundle small.
+const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
+
 export const router = createBrowserRouter([
   {
     element: <Layout />,
+    hydrateFallbackElement: <FullPageSpinner />,
     children: [
       { index: true, element: <HomePage /> },
       { path: 'verify-email', element: <VerifyEmailPage /> },
@@ -30,25 +35,26 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={['customer']} />,
         children: [
-          { path: 'book', element: <ComingSoonPage title="Reservar" /> },
-          { path: 'bookings', element: <ComingSoonPage title="Mis reservas" /> },
+          { path: 'book', lazy: page(() => import('./pages/customer/BookPage')) },
+          { path: 'bookings', lazy: page(() => import('./pages/customer/MyBookingsPage')) },
         ],
       },
       {
         element: <ProtectedRoute allowedRoles={['provider']} />,
         children: [
-          { path: 'agenda', element: <ComingSoonPage title="Mi agenda" /> },
-          { path: 'availability', element: <ComingSoonPage title="Disponibilidad" /> },
+          { path: 'agenda', lazy: page(() => import('./pages/provider/AgendaPage')) },
+          { path: 'availability', lazy: page(() => import('./pages/provider/AvailabilityPage')) },
         ],
       },
       {
         path: 'admin',
         element: <ProtectedRoute allowedRoles={['admin']} />,
         children: [
-          { path: 'services', element: <ComingSoonPage title="Servicios" /> },
-          { path: 'users', element: <ComingSoonPage title="Usuarios" /> },
-          { path: 'bookings', element: <ComingSoonPage title="Reservas" /> },
-          { path: 'stats', element: <ComingSoonPage title="Estadísticas" /> },
+          { path: 'services', lazy: page(() => import('./pages/admin/AdminServicesPage')) },
+          { path: 'providers', lazy: page(() => import('./pages/admin/AdminProvidersPage')) },
+          { path: 'users', lazy: page(() => import('./pages/admin/AdminUsersPage')) },
+          { path: 'bookings', lazy: page(() => import('./pages/admin/AdminBookingsPage')) },
+          { path: 'stats', lazy: page(() => import('./pages/admin/AdminStatsPage')) },
         ],
       },
       { path: '*', element: <NotFoundPage /> },
