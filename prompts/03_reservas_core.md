@@ -2,7 +2,7 @@
 
 **Modelo:** Opus 5.5 · **Costo estimado:** $1.0 – 1.8 · **Requisito:** fase 02 terminada y commiteada.
 
-Sesión nueva (`/new`). Lee solo `AGENTS.md`, `models/` y `core/deps.py`.
+Sesión nueva (`/new`). Lee solo `AGENTS.md`, `models/`, `core/deps.py`, `core/notifications.py` y `main.py`.
 
 ## Objetivo
 
@@ -26,7 +26,7 @@ Servicios, disponibilidad, generación de slots y reservas con máquina de estad
 6. **Estadísticas** (`GET /admin/stats`): conteo por estado, reservas por día de los últimos 30 días, top 5 servicios y ingresos estimados (suma de `price_cents` de las completadas).
 7. **Tests:**
    - `tests/test_slots.py` (función pura): respeta reglas, bloqueos y reservas; avance por duración; aviso mínimo; horizonte; cambio de zona horaria.
-   - `tests/test_bookings.py`: flujo feliz; slot fuera de disponibilidad → 422/409; transición inválida → 409; cliente cancelando fuera de plazo → 409; customer no ve reservas ajenas (404); provider solo ve las suyas.
+   - `tests/test_bookings.py`: flujo feliz; slot fuera de disponibilidad → 409 slot_unavailable; transición inválida → 409; cliente cancelando fuera de plazo → 409; customer no ve reservas ajenas (404); provider solo ve las suyas.
    - **Concurrencia:** dos peticiones simultáneas (hilos, sesiones distintas) al mismo slot → exactamente una responde 201 y la otra 409.
    - `tests/test_catalog.py`: permisos por rol en servicios y disponibilidad.
 

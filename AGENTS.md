@@ -8,21 +8,31 @@ Idioma: textos visibles al usuario y correos en español; código, nombres de va
 **Backend** (`/backend`): Python 3.12, FastAPI, SQLAlchemy 2.0 síncrono (estilo `Mapped[]`), Alembic, Pydantic v2 + pydantic-settings, PostgreSQL 16, PyJWT, `pwdlib[argon2]`, email-validator, Jinja2, slowapi, `smtplib` de la librería estándar para correo.
 Dev: pytest, httpx, ruff.
 
-**Frontend** (`/frontend`): Vite, React, TypeScript estricto, Tailwind CSS, React Router, TanStack Query, react-hook-form + zod (`@hookform/resolvers`), date-fns, `openapi-typescript` (dev). Sin librerías de componentes.
+**Frontend** (`/frontend`): Vite, React, TypeScript estricto, Tailwind CSS, React Router, TanStack Query, react-hook-form + zod (`@hookform/resolvers`), date-fns, `openapi-typescript` (dev), ESLint (configuración por defecto de Vite). Sin librerías de componentes.
 
 **Infra**: Docker Compose (`db`, `mailpit`, `api`, `web`), GitHub Actions.
+
+## Entorno
+
+Windows con PowerShell 5.1. No uses `&&`; ejecuta los comandos por separado o encadénalos con `;`. Traduce los comandos estilo bash de los prompts (`cp` → `Copy-Item`, `cd x && cmd` → `Set-Location x; cmd`). Scripts y Dockerfiles usan finales de línea LF.
 
 ## Estructura
 
 ```
 turnos/
 ├─ AGENTS.md / CLAUDE.md (solo contiene: @AGENTS.md)
+├─ README.md, LICENSE, opencode.json
+├─ .gitignore, .gitattributes
 ├─ docker-compose.yml, .env.example
+├─ .github/workflows/ci.yml
 ├─ docker/initdb/01-create-test-db.sql
 ├─ prompts/            # prompts por fase
-├─ docs/DECISIONS.md   # una línea por decisión ambigua
+├─ docs/
+│  ├─ DECISIONS.md     # una línea por decisión ambigua
+│  └─ img/
 ├─ backend/
-│  ├─ pyproject.toml, alembic.ini, alembic/versions/
+│  ├─ Dockerfile, pyproject.toml, alembic.ini
+│  ├─ alembic/ (env.py, versions/)
 │  ├─ app/
 │  │  ├─ main.py
 │  │  ├─ core/    (config.py, security.py, deps.py, email.py, notifications.py)
@@ -68,17 +78,18 @@ ALTER TABLE bookings ADD CONSTRAINT no_overlapping_bookings
 
 - Auth: `POST /auth/register`, `/auth/login`, `/auth/refresh` (cookie), `/auth/logout`, `GET /auth/verify-email`, `POST /auth/forgot-password`, `/auth/reset-password`
 - Usuario: `GET|PATCH /users/me`; admin: `GET /admin/users`, `PATCH /admin/users/{id}`
-- Catálogo: `GET /services`; admin: `POST|PATCH|DELETE /services` (DELETE = desactivar), `PUT /admin/providers/{id}/services`
+- Catálogo: `GET /services`; admin: `POST|PATCH|DELETE /services` (DELETE = desactivar), `PUT /admin/providers/{id}/services` (se implementa en `routers/services.py`)
 - Profesionales: `GET /providers?service_id=`, `GET /providers/{id}/slots?service_id=&date_from=&date_to=`
 - Disponibilidad (provider): `GET|PUT /providers/me/availability`, `GET|POST|DELETE /providers/me/time-off`
 - Reservas: `POST /bookings`, `GET /bookings` (filtrado por rol; `status`, `date_from`, `date_to`, `limit`, `offset`), `GET /bookings/{id}`, `POST /bookings/{id}/confirm|cancel|complete`
-- Admin: `GET /admin/stats`, `GET /health`
+- Admin: `GET /admin/stats`
+- Sistema: `GET /health` (público)
 
 ## Reglas de negocio
 
 - Zona horaria de las reglas de disponibilidad: `APP_TIMEZONE` (por defecto `America/Bogota`). En la base todo es UTC; la API usa ISO 8601 con offset.
 - Un slot es válido si: cae dentro de una regla semanal, no se solapa con `time_off` ni con otra reserva activa, empieza después de `MIN_NOTICE_MINUTES` (60) y dentro de `BOOKING_HORIZON_DAYS` (60). Los slots se generan avanzando de `duration_minutes` en `duration_minutes` desde el inicio de cada regla.
-- Violación del constraint de exclusión → `409 slot_unavailable`.
+- Violación del constraint de exclusión → `409 slot_unavailable`. Un `starts_at` fuera de la disponibilidad (no está entre los slots generados) también responde `409 slot_unavailable` (no 422).
 - Transiciones: `pending→confirmed`, `pending→cancelled`, `confirmed→cancelled`, `confirmed→completed` (solo si ya empezó). Otras → `409 invalid_transition`.
 - El cliente cancela hasta `CANCEL_MIN_HOURS` (2) antes; provider y admin siempre.
 
@@ -110,4 +121,4 @@ ALTER TABLE bookings ADD CONSTRAINT no_overlapping_bookings
 4. Ejecuta solo los tests de lo que tocaste; la suite completa, una vez al final de la fase.
 5. Ante ambigüedad, elige lo más simple coherente con este documento y anótalo en una línea en `docs/DECISIONS.md`; no preguntes.
 6. Si un comando falla dos veces con el mismo error, detente y repórtalo.
-7. Definición de terminado: `ruff check` limpio, `pytest` en verde (backend) y `tsc --noEmit` + `npm run build` sin errores (frontend).
+7. Definición de terminado: `ruff check` limpio, `pytest` en verde (backend) y `tsc --noEmit` + `npm run lint` + `npm run build` sin errores (frontend).
