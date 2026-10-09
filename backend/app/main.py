@@ -4,7 +4,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.config import get_settings
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
-from app.routers import admin_users, auth, users
+from app.routers import admin_stats, admin_users, auth, availability, bookings, services, users
 
 settings = get_settings()
 
@@ -25,6 +25,10 @@ API_PREFIX = "/api/v1"
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
 app.include_router(admin_users.router, prefix=API_PREFIX)
+app.include_router(services.router, prefix=API_PREFIX)
+app.include_router(availability.router, prefix=API_PREFIX)
+app.include_router(bookings.router, prefix=API_PREFIX)
+app.include_router(admin_stats.router, prefix=API_PREFIX)
 
 
 @app.get(f"{API_PREFIX}/health")
