@@ -3,7 +3,7 @@
 import logging
 
 from app.core.config import get_settings
-from app.models import User
+from app.models import Booking, User
 
 logger = logging.getLogger("app.notifications")
 
@@ -16,3 +16,15 @@ def notify_verify_email(user: User, token: str) -> None:
 def notify_password_reset(user: User, token: str) -> None:
     link = f"{get_settings().frontend_url}/reset-password?token={token}"
     logger.info("Password reset for %s: %s", user.email, link)
+
+
+def notify_booking_created(booking: Booking) -> None:
+    logger.info("Booking %s created for %s", booking.id, booking.starts_at.isoformat())
+
+
+def notify_booking_confirmed(booking: Booking) -> None:
+    logger.info("Booking %s confirmed", booking.id)
+
+
+def notify_booking_cancelled(booking: Booking) -> None:
+    logger.info("Booking %s cancelled by %s", booking.id, booking.cancelled_by)

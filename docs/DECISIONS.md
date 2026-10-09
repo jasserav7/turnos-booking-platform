@@ -16,3 +16,12 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [02] Resetear la contraseña revoca todos los refresh tokens del usuario — cierra sesiones posiblemente comprometidas.
 - [02] Login y forgot-password aceptan el email como texto (no `EmailStr`) — el admin del seed usa el dominio `.local`, que email-validator rechaza; el registro sí valida con `EmailStr`.
 - [02] Rate limit responde `429 {"detail": "rate_limited"}`; en tests se reinicia el limitador antes de cada test.
+- [03] `GET /services`, `GET /providers` y `GET /providers/{id}/slots` son públicos (sin token) — permiten explorar el catálogo antes de registrarse.
+- [03] `date_from`/`date_to` (slots y listado de reservas) son fechas locales en `APP_TIMEZONE`, ambas inclusivas; rango invertido → `422 invalid_range`, más de 31 días → `422 range_too_large`.
+- [03] Servicio inexistente o inactivo → `404 service_not_found`; profesional inexistente, inactivo o que no ofrece el servicio → `404 provider_not_found`.
+- [03] `PUT /admin/providers/{id}/services` con un usuario que no es `provider` → `404 provider_not_found`; ids de servicio inexistentes → `422 invalid_service`.
+- [03] Reglas de disponibilidad solapadas el mismo día → `422 overlapping_rules`; las reglas contiguas (fin = inicio) se permiten.
+- [03] Cliente que cancela con menos de `CANCEL_MIN_HOURS` → `409 cancellation_window_closed`; un customer que intenta confirmar/completar una reserva propia → 403.
+- [03] `complete` no notifica — solo existen los stubs `notify_booking_created|confirmed|cancelled` que pide la fase.
+- [03] `GET /bookings` ordena por `starts_at` ascendente; `GET /admin/stats` agrupa por día local de `starts_at` (últimos 30 días incluido hoy) y el top 5 cuenta reservas en cualquier estado.
+- [03] Un slot es válido si su inicio cae en `[now + MIN_NOTICE_MINUTES, now + BOOKING_HORIZON_DAYS]`; el avance por duración se calcula en UTC desde el inicio local de cada regla.
