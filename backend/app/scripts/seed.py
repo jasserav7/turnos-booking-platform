@@ -1,8 +1,7 @@
-from pwdlib import PasswordHash
-from pwdlib.hashers.argon2 import Argon2Hasher
 from sqlalchemy import select
 
 from app.core.config import get_settings
+from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models import User, UserRole
 
@@ -12,8 +11,7 @@ def main() -> None:
     if not settings.admin_email or not settings.admin_password:
         raise SystemExit("ADMIN_EMAIL and ADMIN_PASSWORD must be set")
 
-    email = settings.admin_email.lower()
-    hasher = PasswordHash((Argon2Hasher(),))
+    email = settings.admin_email.strip().lower()
     with SessionLocal() as db:
         if db.scalar(select(User).where(User.email == email)):
             print(f"Admin {email} already exists")
@@ -21,7 +19,7 @@ def main() -> None:
         db.add(
             User(
                 email=email,
-                password_hash=hasher.hash(settings.admin_password),
+                password_hash=hash_password(settings.admin_password),
                 full_name="Administrador",
                 role=UserRole.admin,
                 is_active=True,
