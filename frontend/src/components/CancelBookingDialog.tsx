@@ -34,7 +34,7 @@ export function CancelBookingDialog({ booking, description, onClose }: CancelBoo
             mutation.mutate({ id: booking.id, action: 'cancel', reason: reason.trim() }, { onSuccess: close })
           }}
         >
-          <p className="text-gray-700">
+          <p className="text-ink-muted">
             ¿Seguro que quieres cancelar la reserva del <strong>{formatDateTime(booking.starts_at)}</strong>?
             {description && <> {description}</>}
           </p>

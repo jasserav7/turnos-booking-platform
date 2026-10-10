@@ -80,9 +80,9 @@ export default function AdminBookingsPage() {
       )}
       {query.isSuccess && query.data.items.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-200" aria-busy={query.isFetching}>
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-left text-gray-600">
+          <div className="relative overflow-x-auto rounded-xl bg-surface ring-1 ring-line" aria-busy={query.isFetching}>
+            <table className="min-w-full divide-y divide-line text-sm">
+              <thead className="bg-sunken text-left text-xs font-medium text-ink-muted">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Fecha</th>
                   <th scope="col" className="px-4 py-3 font-medium">Servicio</th>
@@ -91,13 +91,13 @@ export default function AdminBookingsPage() {
                   <th scope="col" className="px-4 py-3 font-medium">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {query.data.items.map((booking) => (
                   <tr key={booking.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-900">{formatDateTime(booking.starts_at)}</td>
-                    <td className="px-4 py-3 text-gray-700">{booking.service_name}</td>
-                    <td className="px-4 py-3 text-gray-700">{booking.customer_name}</td>
-                    <td className="px-4 py-3 text-gray-700">{booking.provider_name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-ink">{formatDateTime(booking.starts_at)}</td>
+                    <td className="px-4 py-3 text-ink-muted">{booking.service_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{booking.customer_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{booking.provider_name}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={booking.status} />
                     </td>

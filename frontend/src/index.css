@@ -1,1 +1,235 @@
 @import "tailwindcss";
+
+/*
+ * Turnos design tokens.
+ * Semantic roles live in CSS variables and switch with [data-theme] on <html>
+ * (set before paint by index.html, then by the theme toggle). Components only use
+ * the semantic utilities below (bg-surface, text-ink, bg-accent...), never raw hues.
+ * Every text/background pair is AA-checked in both themes.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+
+  --canvas: oklch(0.985 0.004 250);
+  --surface: oklch(1 0 0);
+  --sunken: oklch(0.965 0.006 250);
+  --ink: oklch(0.24 0.02 250);
+  --ink-muted: oklch(0.44 0.02 250);
+  --ink-subtle: oklch(0.52 0.02 250);
+  --line: oklch(0.91 0.008 250);
+  --line-strong: oklch(0.64 0.016 250);
+
+  --accent: oklch(0.5 0.16 222);
+  --accent-hover: oklch(0.44 0.15 222);
+  --on-accent: oklch(1 0 0);
+  --accent-ink: oklch(0.47 0.16 222);
+  --accent-soft: oklch(0.955 0.024 222);
+  --accent-soft-ink: oklch(0.38 0.13 222);
+  --focus: oklch(0.55 0.17 222);
+
+  --success-soft: oklch(0.96 0.035 155);
+  --success-ink: oklch(0.4 0.09 155);
+  --success-line: oklch(0.78 0.08 155);
+  --warning-soft: oklch(0.965 0.045 85);
+  --warning-ink: oklch(0.44 0.09 65);
+  --warning-line: oklch(0.8 0.1 80);
+  --danger-soft: oklch(0.96 0.025 25);
+  --danger-ink: oklch(0.46 0.16 25);
+  --danger-line: oklch(0.8 0.08 25);
+  --danger: oklch(0.53 0.19 27);
+  --danger-hover: oklch(0.47 0.18 27);
+  --on-danger: oklch(1 0 0);
+  --neutral-soft: oklch(0.95 0.006 250);
+  --neutral-ink: oklch(0.4 0.02 250);
+
+  --backdrop: oklch(0.2 0.02 250 / 0.5);
+  --shadow-color: 250 30% 20%;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Evening use on a phone: low-glare surfaces, elevation goes lighter, not shadowier. */
+  --canvas: oklch(0.17 0.012 250);
+  --surface: oklch(0.215 0.014 250);
+  --sunken: oklch(0.255 0.015 250);
+  --ink: oklch(0.95 0.008 250);
+  --ink-muted: oklch(0.8 0.014 250);
+  --ink-subtle: oklch(0.72 0.015 250);
+  --line: oklch(0.31 0.014 250);
+  --line-strong: oklch(0.52 0.02 250);
+
+  --accent: oklch(0.7 0.12 222);
+  --accent-hover: oklch(0.76 0.1 222);
+  --on-accent: oklch(0.17 0.02 250);
+  --accent-ink: oklch(0.79 0.1 222);
+  --accent-soft: oklch(0.31 0.05 222);
+  --accent-soft-ink: oklch(0.89 0.05 222);
+  --focus: oklch(0.76 0.11 222);
+
+  --success-soft: oklch(0.29 0.05 155);
+  --success-ink: oklch(0.86 0.1 155);
+  --success-line: oklch(0.48 0.08 155);
+  --warning-soft: oklch(0.31 0.05 80);
+  --warning-ink: oklch(0.89 0.1 85);
+  --warning-line: oklch(0.52 0.09 80);
+  --danger-soft: oklch(0.3 0.06 25);
+  --danger-ink: oklch(0.86 0.08 25);
+  --danger-line: oklch(0.52 0.1 25);
+  --danger: oklch(0.56 0.17 27);
+  --danger-hover: oklch(0.5 0.16 27);
+  --on-danger: oklch(1 0 0);
+  --neutral-soft: oklch(0.29 0.012 250);
+  --neutral-ink: oklch(0.85 0.012 250);
+
+  --backdrop: oklch(0.08 0.01 250 / 0.7);
+  --shadow-color: 250 40% 3%;
+}
+
+@theme inline {
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-ink: var(--accent-soft-ink);
+  --color-focus: var(--focus);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-success-line: var(--success-line);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-line: var(--warning-line);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-line: var(--danger-line);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-on-danger: var(--on-danger);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-ink: var(--neutral-ink);
+
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 3px hsl(var(--shadow-color) / 0.08);
+  --shadow-overlay: 0 12px 32px -8px hsl(var(--shadow-color) / 0.28), 0 4px 8px -4px hsl(var(--shadow-color) / 0.16);
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    background-color: var(--canvas);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-feature-settings: "kern";
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-ink);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--accent);
+    accent-color: var(--accent);
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--accent);
+  }
+
+  ::placeholder {
+    color: var(--ink-subtle);
+    opacity: 1;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  /* Theme switches recolor instantly; color transitions on controls stay short. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Native <dialog> enters with a short fade + lift; reduced motion keeps only the fade. */
+  .modal-dialog {
+    opacity: 0;
+    translate: 0 8px;
+    transition:
+      opacity 180ms var(--ease-out-quint),
+      translate 180ms var(--ease-out-quint),
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+  }
+
+  .modal-dialog[open] {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .modal-dialog[open] {
+      opacity: 0;
+      translate: 0 8px;
+    }
+  }
+
+  .modal-dialog::backdrop {
+    background-color: transparent;
+    transition:
+      background-color 180ms ease-out,
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+  }
+
+  .modal-dialog[open]::backdrop {
+    background-color: var(--backdrop);
+  }
+
+  @starting-style {
+    .modal-dialog[open]::backdrop {
+      background-color: transparent;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .modal-dialog,
+    .modal-dialog[open] {
+      translate: none;
+    }
+  }
+}

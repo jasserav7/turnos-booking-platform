@@ -13,6 +13,7 @@ import { Alert } from '../../components/Alert'
 import { Button } from '../../components/Button'
 import { Modal } from '../../components/Modal'
 import { PageHeader } from '../../components/PageHeader'
+import { ActiveBadge } from '../../components/StatusBadge'
 import { Pagination } from '../../components/Pagination'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { TextAreaField } from '../../components/TextAreaField'
@@ -130,30 +131,28 @@ export default function AdminServicesPage() {
       {query.isSuccess && rows.length === 0 && <EmptyState title="Todavía no hay servicios">Crea el primero con “Nuevo servicio”.</EmptyState>}
       {query.isSuccess && rows.length > 0 && (
         <>
-          <div aria-busy={query.isFetching} className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-left text-gray-600">
+          <div aria-busy={query.isFetching} className="relative overflow-x-auto rounded-xl bg-surface ring-1 ring-line">
+            <table className="min-w-full divide-y divide-line text-sm">
+              <thead className="bg-sunken text-left text-xs font-medium text-ink-muted">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Nombre</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Duración</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Precio</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium">Duración</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium">Precio</th>
                   <th scope="col" className="px-4 py-3 font-medium">Estado</th>
                   <th scope="col" className="px-4 py-3 font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {rows.map((service) => (
                   <tr key={service.id}>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{service.name}</p>
-                      {service.description && <p className="max-w-xs truncate text-gray-500">{service.description}</p>}
+                      <p className="font-medium text-ink">{service.name}</p>
+                      {service.description && <p className="max-w-xs truncate text-ink-subtle">{service.description}</p>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-700">{service.duration_minutes} min</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-700">{formatPrice(service.price_cents)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink-muted">{service.duration_minutes} min</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink-muted">{formatPrice(service.price_cents)}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${service.is_active ? 'bg-green-50 text-green-800 ring-green-600/30' : 'bg-gray-100 text-gray-700 ring-gray-500/30'}`}>
-                        {service.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
+                      <ActiveBadge active={service.is_active} />
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">

@@ -13,7 +13,7 @@ export function Pagination({ total, limit, offset, onChange }: PaginationProps) 
   const to = Math.min(offset + limit, total)
   return (
     <nav className="flex items-center justify-between gap-4 pt-4" aria-label="Paginación">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-ink-muted">
         {from}–{to} de {total}
       </p>
       <div className="flex gap-2">

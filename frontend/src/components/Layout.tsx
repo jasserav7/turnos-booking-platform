@@ -2,11 +2,25 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { NAV_BY_ROLE, ROLE_LABELS, type NavItem } from '../lib/navigation'
+import { Icon } from './Icon'
+import { ThemeToggle } from './ThemeToggle'
+
+const focusRing = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `block rounded-md px-3 py-2 text-sm font-medium ${
-    isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'
+  `flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors duration-150 md:min-h-9 ${focusRing} ${
+    isActive ? 'bg-accent-soft text-accent-soft-ink' : 'text-ink-muted hover:bg-sunken hover:text-ink'
   }`
+
+function BrandMark() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="8" className="fill-accent" />
+      <path d="M9 10.5h14M16 10.5V23" className="stroke-on-accent" strokeWidth={3} strokeLinecap="round" />
+      <circle cx="22.5" cy="21.5" r="2.5" className="fill-on-accent" />
+    </svg>
+  )
+}
 
 export function Layout() {
   const { user, status, logout } = useAuth()
@@ -32,61 +46,62 @@ export function Layout() {
     }
   }
 
-  const userBox = user && (
-    <div className="flex items-center gap-3">
-      <div className="text-right text-sm leading-tight">
-        <p className="font-medium text-gray-900">{user.full_name}</p>
-        <p className="text-gray-500">{ROLE_LABELS[user.role]}</p>
+  const userBox = (align: 'start' | 'end') =>
+    user && (
+      <div className={`flex items-center gap-3 ${align === 'end' ? 'justify-end' : 'justify-between'}`}>
+        <div className={`text-sm leading-tight ${align === 'end' ? 'text-right' : ''}`}>
+          <p className="font-medium text-ink">{user.full_name}</p>
+          <p className="text-ink-subtle">{ROLE_LABELS[user.role]}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className={`min-h-9 rounded-lg border border-line-strong px-3 text-sm font-medium text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-60 ${focusRing}`}
+        >
+          {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={handleLogout}
-        disabled={loggingOut}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-      >
-        {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
-      </button>
-    </div>
-  )
+    )
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link to="/" className="text-xl font-bold text-indigo-600">
-            Turnos
+    <div className="flex min-h-dvh flex-col bg-canvas">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+          <Link to="/" className={`-m-1 flex items-center gap-2 rounded-lg p-1 ${focusRing}`}>
+            <BrandMark />
+            <span className="text-lg font-semibold tracking-tight text-ink">Turnos</span>
           </Link>
           {status !== 'loading' && (
-            <>
-              <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label="Principal">
-                {items.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={linkClass}>
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
-              <div className="hidden md:block">{userBox}</div>
-              <button
-                type="button"
-                className="rounded-md p-2 text-gray-700 hover:bg-gray-100 md:hidden"
-                aria-expanded={menuOpen}
-                aria-controls="mobile-menu"
-                aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-                onClick={() => setMenuPath(menuOpen ? null : location.pathname)}
-              >
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  {menuOpen ? (
-                    <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                  ) : (
-                    <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </>
+            <nav className="hidden flex-1 items-center gap-1 pl-4 md:flex" aria-label="Principal">
+              {items.map((item) => (
+                <NavLink key={item.to} to={item.to} className={linkClass}>
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
           )}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {status !== 'loading' && (
+              <>
+                <div className="hidden md:block">{userBox('end')}</div>
+                <button
+                  type="button"
+                  className={`flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted transition-colors duration-150 hover:bg-sunken md:hidden ${focusRing}`}
+                  aria-expanded={menuOpen}
+                  aria-controls="mobile-menu"
+                  aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                  onClick={() => setMenuPath(menuOpen ? null : location.pathname)}
+                >
+                  <Icon name={menuOpen ? 'x' : 'menu'} className="h-6 w-6" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
         {menuOpen && (
-          <div id="mobile-menu" className="space-y-3 border-t border-gray-200 px-4 py-3 md:hidden">
+          <div id="mobile-menu" className="space-y-3 border-t border-line px-4 pb-4 pt-3 md:hidden">
             <nav className="space-y-1" aria-label="Principal móvil">
               {items.map((item) => (
                 <NavLink key={item.to} to={item.to} className={linkClass}>
@@ -94,11 +109,11 @@ export function Layout() {
                 </NavLink>
               ))}
             </nav>
-            {userBox}
+            {user && <div className="border-t border-line pt-3">{userBox('start')}</div>}
           </div>
         )}
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
         <Outlet />
       </main>
     </div>

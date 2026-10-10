@@ -27,15 +27,15 @@ function AssignmentForm({ provider, services, initial }: { provider: User; servi
     <>
       <div className="grid gap-2 sm:grid-cols-2">
         {services.map((service) => (
-          <label key={service.id} className="flex items-center gap-2 text-sm text-gray-700">
+          <label key={service.id} className="flex items-center gap-2 text-sm text-ink-muted">
             <input
               type="checkbox"
               checked={selected.has(service.id)}
               onChange={() => toggle(service.id)}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-line-strong text-accent-ink focus:ring-2 focus:ring-focus"
             />
             {service.name}
-            {!service.is_active && <span className="text-xs text-gray-500">(inactivo)</span>}
+            {!service.is_active && <span className="text-xs text-ink-subtle">(inactivo)</span>}
           </label>
         ))}
       </div>
@@ -44,7 +44,7 @@ function AssignmentForm({ provider, services, initial }: { provider: User; servi
           <Alert variant="error">{errorMessage(mutation.error)}</Alert>
         </div>
       )}
-      {mutation.isSuccess && !dirty && <p className="mt-3 text-sm text-green-700">Servicios guardados.</p>}
+      {mutation.isSuccess && !dirty && <p className="mt-3 text-sm text-success-ink">Servicios guardados.</p>}
       <div className="mt-4">
         <Button
           size="sm"
@@ -66,13 +66,13 @@ function ProviderCard({ provider, services }: { provider: User; services: Servic
   const initial = (assigned.data ?? []).map((s) => s.id)
 
   return (
-    <li className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+    <li className="rounded-xl bg-surface p-4 ring-1 ring-line">
       <fieldset>
-        <legend className="mb-1 font-medium text-gray-900">
+        <legend className="mb-1 font-semibold text-ink">
           {provider.full_name}
-          {!provider.is_active && <span className="ml-2 text-xs font-normal text-gray-500">(inactivo)</span>}
+          {!provider.is_active && <span className="ml-2 text-xs font-normal text-ink-subtle">(inactivo)</span>}
         </legend>
-        <p className="mb-3 text-sm text-gray-500">{provider.email}</p>
+        <p className="mb-3 text-sm text-ink-subtle">{provider.email}</p>
         {assigned.isPending && <LoadingState label="Cargando servicios asignados…" />}
         {assigned.isError && <ErrorState error={assigned.error} onRetry={() => void assigned.refetch()} />}
         {assigned.isSuccess && (

@@ -17,14 +17,14 @@ export default function VerifyEmailPage() {
     <AuthCard title="Verificar correo">
       {!token && <Alert variant="error">El enlace no contiene un token de verificación.</Alert>}
       {token && query.isPending && (
-        <div className="flex items-center gap-3 text-gray-700">
+        <div className="flex items-center gap-3 text-ink-muted">
           <Spinner /> Verificando tu correo…
         </div>
       )}
       {query.isSuccess && <Alert variant="success">¡Listo! Tu correo quedó verificado.</Alert>}
       {query.isError && <Alert variant="error">{errorMessage(query.error)}</Alert>}
       {(!token || !query.isPending) && (
-        <Link to={next.to} className="block text-center font-medium text-indigo-600 hover:underline">
+        <Link to={next.to} className="block text-center font-medium text-accent-ink hover:underline">
           {next.label}
         </Link>
       )}

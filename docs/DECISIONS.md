@@ -60,3 +60,9 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [06b] `GET /admin/services` pagina con `limit` (por defecto 100, máx. 100) / `offset` y ordena por nombre; responde `{ items, total }` como los demás listados.
 - [06b] `GET /admin/providers/{id}/services` responde `404 provider_not_found` si el usuario no existe o no es `provider`, igual que el `PUT`.
 - [06b] La pantalla Profesionales muestra también los servicios inactivos (marcados) para que guardar no borre asignaciones; carga los primeros 100 profesionales y servicios.
+- [ui] Tokens de color semánticos en `frontend/src/index.css` (variables CSS + `@theme inline` de Tailwind v4, OKLCH) para claro y oscuro; los componentes solo usan utilidades semánticas (`bg-surface`, `text-ink`, `bg-accent`…). Todos los pares texto/fondo verificados AA por cálculo.
+- [ui] Acento azul petróleo (tono 222) en lugar del índigo por defecto de Tailwind — más sereno y propio; el detector de Impeccable lo marcaba como paleta genérica.
+- [ui] Selector de tema Sistema / Claro / Oscuro en la cabecera; la preferencia se guarda en `localStorage` (`turnos-theme`, solo preferencia visual, nunca tokens) y un script en `index.html` la aplica antes del primer pintado.
+- [ui] Íconos SVG propios (`components/Icon.tsx`, trazo único) en lugar de glifos Unicode; tipografía de sistema (Segoe UI Variable / system-ui) sin fuentes externas para no añadir dependencias.
+- [ui] Movimiento: transiciones de color de 150 ms y entrada del modal de 180 ms con `@starting-style`; con `prefers-reduced-motion` se quitan los desplazamientos y el spinner gira más lento en vez de desaparecer.
+- [ui] Pendiente (fuera de alcance por no cambiar comportamiento): confirmar cambios de rol/estado y desactivaciones en el panel admin, y avisar del plazo de cancelación antes de que el cliente lo intente.

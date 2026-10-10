@@ -11,6 +11,7 @@ import {
 } from '../../api/availability'
 import type { AvailabilityRule } from '../../api/types'
 import { Alert } from '../../components/Alert'
+import { Icon } from '../../components/Icon'
 import { Button } from '../../components/Button'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
@@ -62,10 +63,10 @@ function WeeklyEditor({ initial }: { initial: AvailabilityRule[] }) {
         {WEEKDAYS.map((dayName, weekday) => {
           const dayFields = fields.map((field, index) => ({ field, index })).filter(({ field }) => field.weekday === weekday)
           return (
-            <fieldset key={dayName} className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+            <fieldset key={dayName} className="rounded-xl bg-surface p-4 ring-1 ring-line">
               <legend className="sr-only">{dayName}</legend>
               <div className="mb-3 flex items-center justify-between">
-                <p className="font-medium text-gray-900" aria-hidden="true">
+                <p className="font-semibold text-ink" aria-hidden="true">
                   {dayName}
                 </p>
                 <Button
@@ -75,10 +76,11 @@ function WeeklyEditor({ initial }: { initial: AvailabilityRule[] }) {
                   onClick={() => append({ weekday, start_time: '09:00', end_time: '17:00' }, { shouldFocus: true })}
                   aria-label={`Agregar rango el ${dayName.toLowerCase()}`}
                 >
-                  + Rango
+                  <Icon name="plus" className="h-4 w-4" />
+                  Agregar
                 </Button>
               </div>
-              {dayFields.length === 0 && <p className="text-sm text-gray-500">Sin atención este día.</p>}
+              {dayFields.length === 0 && <p className="text-sm text-ink-subtle">Sin atención este día.</p>}
               <ul className="space-y-3">
                 {dayFields.map(({ field, index }, position) => (
                   <li key={field.id} className="flex items-start gap-2">
@@ -100,11 +102,9 @@ function WeeklyEditor({ initial }: { initial: AvailabilityRule[] }) {
                       type="button"
                       onClick={() => remove(index)}
                       aria-label={`Quitar rango ${position + 1} del ${dayName.toLowerCase()}`}
-                      className="mt-7 rounded-md p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                      className="mt-7 rounded-md p-2 text-ink-subtle hover:bg-danger-soft hover:text-danger-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                     >
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                        <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                      </svg>
+                      <Icon name="x" />
                     </button>
                   </li>
                 ))}
@@ -149,7 +149,7 @@ function TimeOffSection() {
     <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
       <form
         noValidate
-        className="space-y-4 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200"
+        className="space-y-4 rounded-xl bg-surface p-4 ring-1 ring-line"
         onSubmit={form.handleSubmit((data) =>
           create.mutate(
             { starts_at: zonedToUtcIso(data.starts_at), ends_at: zonedToUtcIso(data.ends_at), reason: data.reason.trim() || null },
@@ -157,7 +157,7 @@ function TimeOffSection() {
           ),
         )}
       >
-        <h3 className="font-medium text-gray-900">Nuevo bloqueo</h3>
+        <h3 className="font-semibold text-ink">Nuevo bloqueo</h3>
         <TextField type="datetime-local" label="Desde" error={errors.starts_at?.message} {...form.register('starts_at')} />
         <TextField type="datetime-local" label="Hasta" error={errors.ends_at?.message} {...form.register('ends_at')} />
         <TextField label="Motivo (opcional)" maxLength={255} error={errors.reason?.message} {...form.register('reason')} />
@@ -181,12 +181,12 @@ function TimeOffSection() {
         {query.isSuccess && query.data.length > 0 && (
           <ul className="space-y-3">
             {query.data.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+              <li key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-surface p-4 ring-1 ring-line">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-ink">
                     {formatDateTime(item.starts_at)} – {formatDateTime(item.ends_at)}
                   </p>
-                  {item.reason && <p className="text-sm text-gray-600">{item.reason}</p>}
+                  {item.reason && <p className="text-sm text-ink-muted">{item.reason}</p>}
                 </div>
                 <Button
                   variant="secondary"
@@ -218,8 +218,8 @@ export default function AvailabilityPage() {
         {query.isSuccess && <WeeklyEditor initial={query.data} />}
       </section>
       <section>
-        <h2 className="mb-1 text-xl font-semibold text-gray-900">Bloqueos de tiempo</h2>
-        <p className="mb-4 text-gray-600">Durante un bloqueo no se ofrecen horarios a los clientes.</p>
+        <h2 className="mb-1 text-xl font-semibold tracking-tight text-ink">Bloqueos de tiempo</h2>
+        <p className="mb-4 text-ink-muted">Durante un bloqueo no se ofrecen horarios a los clientes.</p>
         <TimeOffSection />
       </section>
     </div>
