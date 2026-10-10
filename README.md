@@ -138,7 +138,7 @@ cp .env.example .env        # PowerShell: Copy-Item .env.example .env
 docker compose up --build
 ```
 
-Al arrancar, la API aplica las migraciones y crea el admin definido en `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+Al arrancar, la API aplica las migraciones y ejecuta `seed` en cada inicio: crea el admin de `ADMIN_EMAIL` / `ADMIN_PASSWORD` solo si no existe y nunca sobrescribe la contraseña de uno existente.
 
 | Servicio | URL |
 |---|---|
@@ -189,13 +189,13 @@ Se definen en `.env` (plantilla en [`.env.example`](.env.example)). Nada de secr
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` / `TEST_DATABASE_URL` | Conexión a la base principal y a la de tests. |
-| `SECRET_KEY` | Clave para firmar los JWT. **Cámbiala en producción.** |
+| `SECRET_KEY` | Clave para firmar los JWT. **Cámbiala en producción** (larga y aleatoria). |
 | `APP_TIMEZONE` | Zona horaria de las reglas de disponibilidad (`America/Bogota`). |
 | `CORS_ORIGINS` | Orígenes permitidos, separados por comas. |
 | `COOKIE_SECURE` | `true` en producción (HTTPS) para la cookie de refresh. |
 | `FRONTEND_URL` | URL base del frontend, usada en los enlaces de los correos. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` | Configuración del correo (Mailpit en desarrollo). |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credenciales del primer admin creado por `seed`. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credenciales del primer admin creado por `seed`. **Cambia la contraseña en producción.** |
 | `MIN_NOTICE_MINUTES` | Antelación mínima para reservar (60). |
 | `BOOKING_HORIZON_DAYS` | Horizonte máximo de reserva (60). |
 | `CANCEL_MIN_HOURS` | Horas mínimas antes de la cita para que el cliente cancele (2). |
@@ -220,6 +220,9 @@ El workflow [`ci.yml`](.github/workflows/ci.yml) ejecuta todo esto en cada push 
 
 ## Credenciales de demo
 
+> [!WARNING]
+> Las cuentas `@demo.turnos.local` y la contraseña `Demo12345!` son **solo para demostración local** y son públicas. En cualquier despliegue real: cambia `ADMIN_PASSWORD` y `SECRET_KEY`, usa `COOKIE_SECURE=true` y **no ejecutes `seed_demo`**.
+
 Tras ejecutar `seed_demo`, todos los usuarios tienen la contraseña **`Demo12345!`**:
 
 | Rol | Correo |
@@ -229,7 +232,7 @@ Tras ejecutar `seed_demo`, todos los usuarios tienen la contraseña **`Demo12345
 | Profesional | `andres@demo.turnos.local` |
 | Cliente | `cliente@demo.turnos.local` |
 
-Además existe el admin del `seed`, con las credenciales de `ADMIN_EMAIL` / `ADMIN_PASSWORD` (en `.env.example`: `admin@turnos.local` / `Admin12345!`). **Son solo para desarrollo.**
+Además existe el admin del `seed`, con las credenciales de `ADMIN_EMAIL` / `ADMIN_PASSWORD` (en `.env.example` son valores de ejemplo: `admin@turnos.local` / `change-me-admin-password`; cámbialos en tu `.env`).
 
 Los datos demo incluyen 5 servicios, disponibilidad semanal para los dos profesionales y reservas de ejemplo en estado pendiente, confirmada, cancelada y completada.
 
