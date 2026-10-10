@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     return (
       <AuthCard title="Restablecer contraseña">
         <Alert variant="error">El enlace no contiene un token válido.</Alert>
-        <Link to="/forgot-password" className="block text-center font-medium text-indigo-600 hover:underline">
+        <Link to="/forgot-password" className="block text-center font-medium text-accent-ink hover:underline">
           Solicitar un enlace nuevo
         </Link>
       </AuthCard>
@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
       title="Restablecer contraseña"
       subtitle="Elige una contraseña nueva de al menos 8 caracteres."
       footer={
-        <Link to="/forgot-password" className="font-medium text-indigo-600 hover:underline">
+        <Link to="/forgot-password" className="font-medium text-accent-ink hover:underline">
           Solicitar un enlace nuevo
         </Link>
       }

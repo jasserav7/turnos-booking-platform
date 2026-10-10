@@ -11,7 +11,7 @@ export function TextAreaField({ label, error, id, rows = 3, ...props }: TextArea
   const fieldId = id ?? generatedId
   return (
     <div className="space-y-1">
-      <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700">
+      <label htmlFor={fieldId} className="block text-sm font-medium text-ink">
         {label}
       </label>
       <textarea
@@ -19,11 +19,11 @@ export function TextAreaField({ label, error, id, rows = 3, ...props }: TextArea
         id={fieldId}
         rows={rows}
         aria-invalid={Boolean(error)}
-        className={`block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-          error ? 'border-red-400' : 'border-gray-300'
+        className={`block min-h-11 w-full rounded-lg border bg-surface px-3 py-2 text-ink transition-[border-color,box-shadow] duration-150 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus ${
+          error ? 'border-danger' : 'border-line-strong'
         }`}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-ink">{error}</p>}
     </div>
   )
 }

@@ -46,9 +46,9 @@ export default function AdminUsersPage() {
       {query.isSuccess && query.data.items.length === 0 && <EmptyState title="No hay usuarios con ese rol" />}
       {query.isSuccess && query.data.items.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-gray-200" aria-busy={query.isFetching}>
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-left text-gray-600">
+          <div className="relative overflow-x-auto rounded-xl bg-surface ring-1 ring-line" aria-busy={query.isFetching}>
+            <table className="min-w-full divide-y divide-line text-sm">
+              <thead className="bg-sunken text-left text-xs font-medium text-ink-muted">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">Usuario</th>
                   <th scope="col" className="px-4 py-3 font-medium">Rol</th>
@@ -56,18 +56,18 @@ export default function AdminUsersPage() {
                   <th scope="col" className="px-4 py-3 font-medium">Registro</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {query.data.items.map((user) => {
                   const isMe = user.id === me?.id
                   const busy = update.isPending && update.variables?.id === user.id
                   return (
                     <tr key={user.id}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">
-                          {user.full_name} {isMe && <span className="text-xs font-normal text-gray-500">(tú)</span>}
+                        <p className="font-medium text-ink">
+                          {user.full_name} {isMe && <span className="text-xs font-normal text-ink-subtle">(tú)</span>}
                         </p>
-                        <p className="text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-500">{user.email_verified_at ? 'Correo verificado' : 'Correo sin verificar'}</p>
+                        <p className="text-ink-subtle">{user.email}</p>
+                        <p className="text-xs text-ink-subtle">{user.email_verified_at ? 'Correo verificado' : 'Correo sin verificar'}</p>
                       </td>
                       <td className="px-4 py-3">
                         <label className="sr-only" htmlFor={`role-${user.id}`}>
@@ -78,7 +78,7 @@ export default function AdminUsersPage() {
                           value={user.role}
                           disabled={isMe || busy}
                           onChange={(event) => update.mutate({ id: user.id, data: { role: event.target.value as UserRole } })}
-                          className="rounded-md border border-gray-300 bg-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+                          className="rounded-md border border-line-strong bg-surface px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-focus disabled:opacity-60"
                         >
                           {roleOptions.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -94,13 +94,13 @@ export default function AdminUsersPage() {
                             checked={user.is_active}
                             disabled={isMe || busy}
                             onChange={(event) => update.mutate({ id: user.id, data: { is_active: event.target.checked } })}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
+                            className="h-4 w-4 rounded border-line-strong text-accent-ink focus:ring-2 focus:ring-focus"
                           />
-                          <span className="text-gray-700">{user.is_active ? 'Activo' : 'Inactivo'}</span>
+                          <span className="text-ink-muted">{user.is_active ? 'Activo' : 'Inactivo'}</span>
                           <span className="sr-only">: {user.full_name}</span>
                         </label>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">{formatDateTime(user.created_at)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-ink-muted">{formatDateTime(user.created_at)}</td>
                     </tr>
                   )
                 })}

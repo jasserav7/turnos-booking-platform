@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useBookingActionMutation, useBookingsQuery, type BookingAction } from '../../api/bookings'
 import type { Booking } from '../../api/types'
 import { Alert } from '../../components/Alert'
+import { Icon } from '../../components/Icon'
 import { Button } from '../../components/Button'
 import { CancelBookingDialog } from '../../components/CancelBookingDialog'
 import { PageHeader } from '../../components/PageHeader'
@@ -48,8 +49,8 @@ export default function AgendaPage() {
               type="button"
               aria-pressed={mode === value}
               onClick={() => setMode(value)}
-              className={`border px-4 py-2 text-sm font-medium first:rounded-l-md last:rounded-r-md focus:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                mode === value ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              className={`border px-4 py-2 text-sm font-medium first:rounded-l-md last:rounded-r-md focus:z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+                mode === value ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink-muted hover:bg-sunken'
               }`}
             >
               {value === 'day' ? 'Día' : 'Semana'}
@@ -58,13 +59,13 @@ export default function AgendaPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" block={false} onClick={() => setAnchor(addDays(anchor, -step))} aria-label={mode === 'day' ? 'Día anterior' : 'Semana anterior'}>
-            ←
+            <Icon name="chevron-left" />
           </Button>
           <Button variant="secondary" size="sm" block={false} onClick={() => setAnchor(today())}>
             Hoy
           </Button>
           <Button variant="secondary" size="sm" block={false} onClick={() => setAnchor(addDays(anchor, step))} aria-label={mode === 'day' ? 'Día siguiente' : 'Semana siguiente'}>
-            →
+            <Icon name="chevron-right" />
           </Button>
           <label className="sr-only" htmlFor="agenda-date">
             Ir a la fecha
@@ -74,12 +75,12 @@ export default function AgendaPage() {
             type="date"
             value={anchor}
             onChange={(event) => event.target.value && setAnchor(event.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-md border border-line-strong px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
           />
         </div>
       </div>
 
-      <h2 className="mb-3 text-lg font-semibold text-gray-900">{rangeLabel}</h2>
+      <h2 className="mb-3 text-lg font-semibold tracking-tight text-ink">{rangeLabel}</h2>
       {action.isError && (
         <div className="mb-4">
           <Alert variant="error">{errorMessage(action.error)}</Alert>
@@ -101,23 +102,26 @@ export default function AgendaPage() {
             .filter((day) => byDay.has(day))
             .map((day) => (
               <section key={day} aria-label={formatDayLong(day)}>
-                {mode === 'week' && <h3 className="mb-2 font-medium text-gray-700">{formatDayLong(day)}</h3>}
+                {mode === 'week' && <h3 className="mb-2 font-medium text-ink-muted">{formatDayLong(day)}</h3>}
                 <ul className="space-y-3">
                   {(byDay.get(day) ?? []).map((booking) => {
                     const started = new Date(booking.starts_at) <= new Date()
                     const busy = action.isPending && action.variables?.id === booking.id
                     return (
-                      <li key={booking.id} className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200 md:flex-row md:items-center md:justify-between">
+                      <li key={booking.id} className="flex flex-col gap-3 rounded-xl bg-surface p-4 ring-1 ring-line md:flex-row md:items-center md:justify-between">
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium text-gray-900">
-                              {formatTime(booking.starts_at)} – {formatTime(booking.ends_at)} · {booking.service_name}
+                            <p className="font-medium text-ink">
+                              <span className="tabular-nums">
+                                {formatTime(booking.starts_at)} – {formatTime(booking.ends_at)}
+                              </span>{' '}
+                              · {booking.service_name}
                             </p>
                             <StatusBadge status={booking.status} />
                           </div>
-                          <p className="text-sm text-gray-600">{booking.customer_name}</p>
-                          {booking.notes && <p className="text-sm text-gray-500">Notas: {booking.notes}</p>}
-                          {booking.cancel_reason && <p className="text-sm text-gray-500">Motivo de cancelación: {booking.cancel_reason}</p>}
+                          <p className="text-sm text-ink-muted">{booking.customer_name}</p>
+                          {booking.notes && <p className="text-sm text-ink-subtle">Notas: {booking.notes}</p>}
+                          {booking.cancel_reason && <p className="text-sm text-ink-subtle">Motivo de cancelación: {booking.cancel_reason}</p>}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {booking.status === 'pending' && (

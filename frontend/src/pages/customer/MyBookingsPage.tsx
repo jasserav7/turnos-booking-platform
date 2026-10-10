@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useBookingsQuery } from '../../api/bookings'
 import type { Booking, BookingStatus } from '../../api/types'
-import { Button } from '../../components/Button'
+import { Button, ButtonLink } from '../../components/Button'
 import { CancelBookingDialog } from '../../components/CancelBookingDialog'
 import { PageHeader } from '../../components/PageHeader'
 import { Pagination } from '../../components/Pagination'
@@ -26,9 +26,7 @@ export default function MyBookingsPage() {
       <PageHeader
         title="Mis reservas"
         actions={
-          <Link to="/book" className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700">
-            Nueva reserva
-          </Link>
+          <ButtonLink to="/book">Nueva reserva</ButtonLink>
         }
       />
       <div className="mb-4 max-w-xs">
@@ -47,7 +45,7 @@ export default function MyBookingsPage() {
       {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
       {query.isSuccess && query.data.items.length === 0 && (
         <EmptyState title={status ? `No tienes reservas en estado “${STATUS_LABELS[status]}”` : 'Aún no tienes reservas'}>
-          <Link to="/book" className="font-medium text-indigo-600 hover:underline">
+          <Link to="/book" className="font-medium text-accent-ink hover:underline">
             Reserva tu primera cita
           </Link>
         </EmptyState>
@@ -56,16 +54,16 @@ export default function MyBookingsPage() {
         <>
           <ul className="space-y-3" aria-busy={query.isFetching}>
             {query.data.items.map((booking) => (
-              <li key={booking.id} className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:flex-row sm:items-center sm:justify-between">
+              <li key={booking.id} className="flex flex-col gap-3 rounded-xl bg-surface p-4 ring-1 ring-line sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-gray-900">{booking.service_name}</p>
+                    <p className="font-medium text-ink">{booking.service_name}</p>
                     <StatusBadge status={booking.status} />
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {formatDateTime(booking.starts_at)} · con {booking.provider_name}
+                  <p className="text-sm text-ink-muted">
+                    <span className="tabular-nums">{formatDateTime(booking.starts_at)}</span> · con {booking.provider_name}
                   </p>
-                  {booking.cancel_reason && <p className="text-sm text-gray-500">Motivo de cancelación: {booking.cancel_reason}</p>}
+                  {booking.cancel_reason && <p className="text-sm text-ink-subtle">Motivo de cancelación: {booking.cancel_reason}</p>}
                 </div>
                 {(booking.status === 'pending' || booking.status === 'confirmed') && (
                   <Button variant="secondary" size="sm" block={false} onClick={() => setCancelling(booking)}>

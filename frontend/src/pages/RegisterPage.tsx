@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { Alert } from '../components/Alert'
 import { AuthCard } from '../components/AuthCard'
-import { Button } from '../components/Button'
+import { Button, ButtonLink } from '../components/Button'
 import { TextField } from '../components/TextField'
 import { errorMessage } from '../lib/errors'
 import { registerSchema, type RegisterForm } from '../lib/validation'
@@ -28,12 +28,9 @@ export default function RegisterPage() {
         <Alert variant="success">
           Te enviamos un correo a <strong>{mutation.data.email}</strong> para verificar tu cuenta.
         </Alert>
-        <Link
-          to="/login"
-          className="block rounded-md bg-indigo-600 px-4 py-2 text-center font-medium text-white hover:bg-indigo-700"
-        >
+        <ButtonLink to="/login" block>
           Ir a iniciar sesión
-        </Link>
+        </ButtonLink>
       </AuthCard>
     )
   }
@@ -45,7 +42,7 @@ export default function RegisterPage() {
       footer={
         <>
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="font-medium text-indigo-600 hover:underline">
+          <Link to="/login" className="font-medium text-accent-ink hover:underline">
             Inicia sesión
           </Link>
         </>

@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
       title="Recuperar contraseña"
       subtitle="Te enviaremos un enlace para crear una contraseña nueva."
       footer={
-        <Link to="/login" className="font-medium text-indigo-600 hover:underline">
+        <Link to="/login" className="font-medium text-accent-ink hover:underline">
           Volver a iniciar sesión
         </Link>
       }

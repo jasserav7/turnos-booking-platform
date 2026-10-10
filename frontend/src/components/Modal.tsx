@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { Icon } from './Icon'
 
 interface ModalProps {
   open: boolean
@@ -27,23 +28,21 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         event.preventDefault()
         onClose()
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-lg p-0 shadow-xl backdrop:bg-gray-900/50"
+      className="modal-dialog m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl bg-surface p-0 text-ink shadow-overlay"
     >
       {open && (
         <div className="p-6">
           <div className="mb-4 flex items-start justify-between gap-4">
-            <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
               {title}
             </h2>
             <button
               type="button"
               onClick={onClose}
               aria-label="Cerrar"
-              className="rounded-md p-1 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="-m-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-ink-subtle transition-colors duration-150 hover:bg-sunken hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-              </svg>
+              <Icon name="x" />
             </button>
           </div>
           {children}

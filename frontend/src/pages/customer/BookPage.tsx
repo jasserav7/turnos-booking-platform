@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router'
 import { z } from 'zod'
 import { useCreateBookingMutation } from '../../api/bookings'
 import { useProvidersQuery, useSlotsQuery } from '../../api/providers'
 import { useServicesQuery } from '../../api/services'
 import type { Booking, Provider, Service } from '../../api/types'
 import { Alert } from '../../components/Alert'
-import { Button } from '../../components/Button'
+import { Icon } from '../../components/Icon'
+import { Button, ButtonLink } from '../../components/Button'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { TextAreaField } from '../../components/TextAreaField'
@@ -22,15 +22,29 @@ const notesSchema = z.object({
 type NotesForm = z.infer<typeof notesSchema>
 
 const optionClass = (selected: boolean) =>
-  `w-full rounded-lg border p-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-    selected ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-gray-200 bg-white hover:border-indigo-300'
+  `w-full rounded-lg border p-4 text-left transition-[border-color,background-color,box-shadow] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+    selected ? 'border-accent bg-accent-soft ring-1 ring-accent' : 'border-line bg-surface hover:border-accent'
   }`
 
+/** Brings a newly revealed step into view when it appears below the fold (mostly on phones). */
+function useRevealOnMount<T extends HTMLElement>(enabled: boolean) {
+  const ref = useRef<T>(null)
+  useEffect(() => {
+    const node = ref.current
+    if (!enabled || !node) return
+    if (node.getBoundingClientRect().top < window.innerHeight * 0.75) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    node.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, [enabled])
+  return ref
+}
+
 function Step({ number, title, children }: { number: number; title: string; children: ReactNode }) {
+  const ref = useRevealOnMount<HTMLElement>(number > 1)
   return (
-    <section className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200 sm:p-6" aria-labelledby={`step-${number}`}>
-      <h2 id={`step-${number}`} className="mb-4 flex items-center gap-3 text-lg font-semibold text-gray-900">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-sm text-white" aria-hidden="true">
+    <section ref={ref} className="scroll-mt-20 rounded-xl bg-surface p-4 ring-1 ring-line sm:p-6" aria-labelledby={`step-${number}`}>
+      <h2 id={`step-${number}`} className="mb-4 flex items-center gap-3 text-lg font-semibold tracking-tight text-ink">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm tabular-nums text-on-accent" aria-hidden="true">
           {number}
         </span>
         <span>
@@ -53,9 +67,9 @@ function ServiceStep({ selected, onSelect }: { selected: Service | null; onSelec
       {query.data.map((service) => (
         <li key={service.id}>
           <button type="button" aria-pressed={selected?.id === service.id} className={optionClass(selected?.id === service.id)} onClick={() => onSelect(service)}>
-            <span className="block font-medium text-gray-900">{service.name}</span>
-            {service.description && <span className="mt-1 block text-sm text-gray-600">{service.description}</span>}
-            <span className="mt-2 block text-sm text-gray-500">
+            <span className="block font-medium text-ink">{service.name}</span>
+            {service.description && <span className="mt-1 block text-sm text-ink-muted">{service.description}</span>}
+            <span className="mt-2 block text-sm text-ink-subtle">
               {service.duration_minutes} min · {formatPrice(service.price_cents)}
             </span>
           </button>
@@ -85,7 +99,7 @@ function ProviderStep({
       {query.data.map((provider) => (
         <li key={provider.id}>
           <button type="button" aria-pressed={selected?.id === provider.id} className={optionClass(selected?.id === provider.id)} onClick={() => onSelect(provider)}>
-            <span className="font-medium text-gray-900">{provider.full_name}</span>
+            <span className="font-medium text-ink">{provider.full_name}</span>
           </button>
         </li>
       ))}
@@ -115,7 +129,7 @@ function SlotStep({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
         <div className="space-y-1">
-          <label htmlFor="booking-date" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="booking-date" className="block text-sm font-medium text-ink">
             Día
           </label>
           <input
@@ -124,17 +138,17 @@ function SlotStep({
             min={minDate}
             value={date}
             onChange={(event) => event.target.value && onDateChange(event.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-md border border-line-strong px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-focus"
           />
         </div>
         <Button variant="secondary" block={false} disabled={date <= minDate} onClick={() => onDateChange(addDays(date, -1))} aria-label="Día anterior">
-          ←
+          <Icon name="chevron-left" />
         </Button>
         <Button variant="secondary" block={false} onClick={() => onDateChange(addDays(date, 1))} aria-label="Día siguiente">
-          →
+          <Icon name="chevron-right" />
         </Button>
       </div>
-      <p className="text-sm font-medium text-gray-700">{formatDayLong(date)}</p>
+      <p className="text-sm font-medium text-ink-muted">{formatDayLong(date)}</p>
       {query.isPending && <LoadingState label="Buscando horarios…" />}
       {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
       {query.isSuccess && query.data.length === 0 && (
@@ -148,8 +162,8 @@ function SlotStep({
                 type="button"
                 aria-pressed={selected === slot}
                 onClick={() => onSelect(slot)}
-                className={`w-full rounded-md border px-2 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  selected === slot ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-gray-800 hover:border-indigo-400'
+                className={`min-h-11 w-full rounded-lg border px-2 py-2 text-sm font-medium tabular-nums transition-[border-color,background-color,color] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+                  selected === slot ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink hover:border-accent'
                 }`}
               >
                 {formatTime(slot)}
@@ -207,15 +221,13 @@ export default function BookPage() {
           ¡Reserva creada! Quedó <strong>pendiente</strong> hasta que {provider.full_name} la confirme. Te enviamos un correo con los
           detalles.
         </Alert>
-        <div className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
-          <p className="font-medium text-gray-900">{service.name}</p>
-          <p className="text-gray-600">{formatDateTime(created.starts_at)}</p>
-          <p className="text-gray-600">Con {provider.full_name}</p>
+        <div className="rounded-xl bg-surface p-4 ring-1 ring-line">
+          <p className="font-medium text-ink">{service.name}</p>
+          <p className="text-ink-muted">{formatDateTime(created.starts_at)}</p>
+          <p className="text-ink-muted">Con {provider.full_name}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Link to="/bookings" className="rounded-md bg-indigo-600 px-4 py-2 text-center font-medium text-white hover:bg-indigo-700">
-            Ver mis reservas
-          </Link>
+          <ButtonLink to="/bookings">Ver mis reservas</ButtonLink>
           <Button variant="secondary" block={false} onClick={reset}>
             Hacer otra reserva
           </Button>
@@ -279,20 +291,24 @@ export default function BookPage() {
         {service && provider && slot && (
           <Step number={4} title="Confirma tu reserva">
             <form className="space-y-4" noValidate onSubmit={form.handleSubmit(onSubmit)}>
-              <dl className="grid gap-2 text-sm sm:grid-cols-3">
+              <dl className="grid gap-4 rounded-lg bg-sunken p-4 text-sm sm:grid-cols-3">
                 <div>
-                  <dt className="text-gray-500">Servicio</dt>
-                  <dd className="font-medium text-gray-900">
-                    {service.name} · {formatPrice(service.price_cents)}
+                  <dt className="text-ink-subtle">Servicio</dt>
+                  <dd className="mt-0.5 font-medium text-ink">{service.name}</dd>
+                  <dd className="tabular-nums text-ink-muted">
+                    {service.duration_minutes} min · {formatPrice(service.price_cents)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Profesional</dt>
-                  <dd className="font-medium text-gray-900">{provider.full_name}</dd>
+                  <dt className="text-ink-subtle">Profesional</dt>
+                  <dd className="mt-0.5 font-medium text-ink">{provider.full_name}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Fecha y hora</dt>
-                  <dd className="font-medium text-gray-900">{formatDateTime(slot)}</dd>
+                  <dt className="text-ink-subtle">Fecha y hora</dt>
+                  <dd className="mt-0.5 font-medium tabular-nums text-ink">{formatDateTime(slot)}</dd>
+                  <dd className="tabular-nums text-ink-muted">
+                    Termina a las {formatTime(new Date(new Date(slot).getTime() + service.duration_minutes * 60_000).toISOString())}
+                  </dd>
                 </div>
               </dl>
               <TextAreaField

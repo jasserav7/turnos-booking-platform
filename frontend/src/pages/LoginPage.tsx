@@ -36,7 +36,7 @@ export default function LoginPage() {
       footer={
         <>
           ¿No tienes cuenta?{' '}
-          <Link to="/register" className="font-medium text-indigo-600 hover:underline">
+          <Link to="/register" className="font-medium text-accent-ink hover:underline">
             Regístrate
           </Link>
         </>
@@ -60,7 +60,7 @@ export default function LoginPage() {
           {...form.register('password')}
         />
         <div className="text-right text-sm">
-          <Link to="/forgot-password" className="text-indigo-600 hover:underline">
+          <Link to="/forgot-password" className="text-accent-ink hover:underline">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>

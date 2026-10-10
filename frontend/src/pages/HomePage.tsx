@@ -2,43 +2,30 @@ import { Link } from 'react-router'
 import { useServicesQuery } from '../api/services'
 import { useAuth } from '../auth/useAuth'
 import { Alert } from '../components/Alert'
-import { Spinner } from '../components/Spinner'
-import { errorMessage } from '../lib/errors'
+import { ButtonLink } from '../components/Button'
+import { Icon } from '../components/Icon'
+import { EmptyState, ErrorState, LoadingState } from '../components/QueryStates'
+import { formatPrice } from '../lib/format'
 import { NAV_BY_ROLE, ROLE_LABELS } from '../lib/navigation'
-
-const currency = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 
 function ServicesList() {
   const { data, isPending, isError, error, refetch } = useServicesQuery()
 
-  if (isPending) {
-    return (
-      <div className="flex items-center gap-3 text-gray-600">
-        <Spinner /> Cargando servicios…
-      </div>
-    )
-  }
-  if (isError) {
-    return (
-      <div className="space-y-2">
-        <Alert variant="error">{errorMessage(error)}</Alert>
-        <button type="button" onClick={() => void refetch()} className="text-sm font-medium text-indigo-600 hover:underline">
-          Reintentar
-        </button>
-      </div>
-    )
-  }
+  if (isPending) return <LoadingState label="Cargando servicios…" />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} />
   if (data.length === 0) {
-    return <p className="text-gray-600">Todavía no hay servicios disponibles.</p>
+    return <EmptyState title="Todavía no hay servicios disponibles">Vuelve pronto: el catálogo se está preparando.</EmptyState>
   }
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="divide-y divide-line overflow-hidden rounded-xl bg-surface ring-1 ring-line">
       {data.map((service) => (
-        <li key={service.id} className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
-          <p className="font-medium text-gray-900">{service.name}</p>
-          {service.description && <p className="mt-1 text-sm text-gray-600">{service.description}</p>}
-          <p className="mt-2 text-sm text-gray-500">
-            {service.duration_minutes} min · {currency.format(service.price_cents / 100)}
+        <li key={service.id} className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-5">
+          <div className="min-w-0">
+            <p className="font-medium text-ink">{service.name}</p>
+            {service.description && <p className="mt-0.5 max-w-prose text-sm text-ink-muted">{service.description}</p>}
+          </div>
+          <p className="shrink-0 text-sm tabular-nums text-ink-subtle">
+            {service.duration_minutes} min · <span className="font-medium text-ink">{formatPrice(service.price_cents)}</span>
           </p>
         </li>
       ))}
@@ -51,23 +38,21 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="space-y-10">
-        <section className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Reserva tu cita en minutos</h1>
-          <p className="mx-auto mt-3 max-w-xl text-gray-600">
+      <div className="space-y-12">
+        <section className="mx-auto max-w-2xl pt-4 text-center sm:pt-10">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Reserva tu cita en minutos</h1>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-ink-muted">
             Elige el servicio, el profesional y el horario que mejor te quede.
           </p>
-          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/register" className="rounded-md bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700">
-              Crear cuenta
-            </Link>
-            <Link to="/login" className="rounded-md border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-50">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <ButtonLink to="/register">Crear cuenta</ButtonLink>
+            <ButtonLink to="/login" variant="secondary">
               Iniciar sesión
-            </Link>
+            </ButtonLink>
           </div>
         </section>
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Servicios</h2>
+        <section className="mx-auto max-w-3xl space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-ink">Servicios</h2>
           <ServicesList />
         </section>
       </div>
@@ -77,28 +62,35 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-2xl font-semibold text-gray-900">Hola, {user.full_name}</h1>
-        <p className="mt-1 text-gray-600">Entraste como {ROLE_LABELS[user.role].toLowerCase()}.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Hola, {user.full_name}</h1>
+        <p className="mt-1 text-ink-muted">Entraste como {ROLE_LABELS[user.role].toLowerCase()}.</p>
         {!user.email_verified_at && (
           <div className="mt-4">
             <Alert>Aún no verificas tu correo. Revisa tu bandeja de entrada.</Alert>
           </div>
         )}
       </section>
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {NAV_BY_ROLE[user.role].map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className="rounded-lg bg-white p-5 font-medium text-gray-900 shadow-sm ring-1 ring-gray-200 hover:ring-indigo-300"
-          >
-            {item.label} →
-          </Link>
-        ))}
-      </section>
+      <nav aria-label="Accesos rápidos">
+        <ul className="divide-y divide-line overflow-hidden rounded-xl bg-surface ring-1 ring-line sm:max-w-md">
+          {NAV_BY_ROLE[user.role].map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="group flex min-h-12 items-center justify-between px-4 font-medium text-ink transition-colors duration-150 hover:bg-sunken focus:outline-none focus-visible:bg-sunken focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+              >
+                {item.label}
+                <Icon
+                  name="chevron-right"
+                  className="h-5 w-5 text-ink-subtle transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
       {user.role === 'customer' && (
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Servicios disponibles</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-ink">Servicios disponibles</h2>
           <ServicesList />
         </section>
       )}
