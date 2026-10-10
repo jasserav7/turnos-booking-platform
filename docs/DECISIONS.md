@@ -66,3 +66,8 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [ui] Íconos SVG propios (`components/Icon.tsx`, trazo único) en lugar de glifos Unicode; tipografía de sistema (Segoe UI Variable / system-ui) sin fuentes externas para no añadir dependencias.
 - [ui] Movimiento: transiciones de color de 150 ms y entrada del modal de 180 ms con `@starting-style`; con `prefers-reduced-motion` se quitan los desplazamientos y el spinner gira más lento en vez de desaparecer.
 - [ui] Pendiente (fuera de alcance por no cambiar comportamiento): confirmar cambios de rol/estado y desactivaciones en el panel admin, y avisar del plazo de cancelación antes de que el cliente lo intente.
+- [07] Rama eat/fase-07-ci-docs creada desde origin/main (la main local estaba desactualizada).
+- [07] Los datos demo usan el dominio @demo.turnos.local y la contraseña Demo12345!, separados del admin de seed; seed_demo no se ejecuta al arrancar Docker, se lanza a mano.
+- [07] seed_demo solo crea la disponibilidad de un profesional y las reservas de ejemplo si aún no tiene ninguna, para no pisar cambios manuales.
+- [07] En Docker, pi ejecuta lembic upgrade head y seed en cada arranque (ambos idempotentes) y web espera a que pi esté sana.
+- [07] En CI la base 	urnos_test se crea con psql; los tests la migran por su cuenta.

@@ -24,7 +24,11 @@ services:
 
   api:
     build: ./backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Applies migrations and creates the admin from ADMIN_EMAIL / ADMIN_PASSWORD on every start.
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.scripts.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     env_file:
       - .env
     environment:
@@ -34,6 +38,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     ports:
       - "8000:8000"
     volumes:
@@ -46,7 +56,8 @@ services:
       VITE_APP_TIMEZONE: ${VITE_APP_TIMEZONE:-America/Bogota}
       VITE_USE_POLLING: "true"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "5173:5173"
     volumes:
