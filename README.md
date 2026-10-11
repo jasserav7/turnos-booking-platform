@@ -159,6 +159,10 @@ Para enviar los recordatorios de reservas próximas (pensado para un cron):
 docker compose exec api python -m app.jobs.send_reminders
 ```
 
+## Despliegue detrás de un proxy
+
+El rate limit (login, registro y recuperación de contraseña) se aplica por IP de cliente. Detrás de un proxy inverso o balanceador, todas las peticiones llegan con la IP del proxy: configura uvicorn con `--proxy-headers --forwarded-allow-ips=<IP del proxy>` (o equivalente) para que se use la IP real y no se limite a todos los usuarios a la vez.
+
 ## Puesta en marcha sin Docker
 
 Requisitos: Python 3.12, Node LTS y un PostgreSQL 16 accesible. Crea las bases `turnos` y `turnos_test` y ajusta `DATABASE_URL` / `TEST_DATABASE_URL` en `.env`. Para tener solo la base y el servidor de correo puedes usar `docker compose up db mailpit`.

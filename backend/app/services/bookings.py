@@ -120,8 +120,13 @@ def list_bookings(
     return list(items), total
 
 
-def get_booking(db: Session, actor: User, booking_id: uuid.UUID) -> Booking:
+def get_booking(
+    db: Session, actor: User, booking_id: uuid.UUID, *, for_update: bool = False
+) -> Booking:
     query = _visible_to(select(Booking).where(Booking.id == booking_id), actor)
+    if for_update:
+        # Lock only the booking row (FOR UPDATE cannot apply to the outer-joined names).
+        query = query.with_for_update(of=Booking)
     booking = db.scalar(_with_names(query))
     if booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="booking_not_found")
@@ -137,7 +142,7 @@ def _save(db: Session, booking: Booking) -> Booking:
 def confirm_booking(
     db: Session, actor: User, booking_id: uuid.UUID, tasks: BackgroundTasks
 ) -> Booking:
-    booking = get_booking(db, actor, booking_id)
+    booking = get_booking(db, actor, booking_id, for_update=True)
     ensure_roles(actor, UserRole.provider, UserRole.admin)
     if booking.status != BookingStatus.pending:
         raise _conflict("invalid_transition")
@@ -154,7 +159,7 @@ def cancel_booking(
     reason: str | None,
     tasks: BackgroundTasks,
 ) -> Booking:
-    booking = get_booking(db, actor, booking_id)
+    booking = get_booking(db, actor, booking_id, for_update=True)
     if booking.status not in (BookingStatus.pending, BookingStatus.confirmed):
         raise _conflict("invalid_transition")
     if actor.role == UserRole.customer:
@@ -170,7 +175,7 @@ def cancel_booking(
 
 
 def complete_booking(db: Session, actor: User, booking_id: uuid.UUID) -> Booking:
-    booking = get_booking(db, actor, booking_id)
+    booking = get_booking(db, actor, booking_id, for_update=True)
     ensure_roles(actor, UserRole.provider, UserRole.admin)
     if booking.status != BookingStatus.confirmed or booking.starts_at > datetime.now(UTC):
         raise _conflict("invalid_transition")

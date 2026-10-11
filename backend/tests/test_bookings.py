@@ -365,6 +365,80 @@ def test_concurrent_bookings_only_one_wins(
     assert sorted(statuses) == [201, 409]
 
 
+def test_cancelled_booking_cannot_be_confirmed(
+    client: TestClient, session: Session, world: dict[str, Any]
+) -> None:
+    booking = insert_booking(
+        session,
+        world["customer"],
+        world["provider"],
+        world["service"],
+        tomorrow_at(9),
+        BookingStatus.cancelled,
+    )
+    response = client.post(
+        f"{API}/bookings/{booking.id}/confirm", headers=auth_headers(world["provider"])
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "invalid_transition"}
+
+
+def test_naive_starts_at_is_rejected(client: TestClient, world: dict[str, Any]) -> None:
+    payload = _payload(world, tomorrow_at(10))
+    payload["starts_at"] = tomorrow_at(10).replace(tzinfo=None).isoformat()
+    response = client.post(
+        f"{API}/bookings", json=payload, headers=auth_headers(world["customer"])
+    )
+    assert response.status_code == 422
+
+
+def test_concurrent_confirms_only_one_wins(
+    committed_world: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with Session(test_engine, expire_on_commit=False) as db:
+        booking = insert_booking(
+            db,
+            committed_world["customers"][0],
+            committed_world["provider"],
+            committed_world["service"],
+            tomorrow_at(10),
+        )
+        db.commit()
+
+    def real_db() -> Iterator[Session]:
+        db = Session(test_engine, expire_on_commit=False)
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = real_db
+    barrier = threading.Barrier(2, timeout=10)
+    statuses: list[int] = []
+    lock = threading.Lock()
+
+    def confirm() -> None:
+        with TestClient(app) as c:
+            barrier.wait()
+            response = c.post(
+                f"{API}/bookings/{booking.id}/confirm",
+                headers=auth_headers(committed_world["provider"]),
+            )
+        with lock:
+            statuses.append(response.status_code)
+
+    try:
+        threads = [threading.Thread(target=confirm) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=30)
+    finally:
+        app.dependency_overrides.clear()
+
+    assert sorted(statuses) == [200, 409]
+
+
 def test_bookings_include_names(
     client: TestClient, session: Session, world: dict[str, Any], make_user: Callable[..., User]
 ) -> None:

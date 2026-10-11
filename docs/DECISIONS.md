@@ -72,3 +72,11 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [07] En Docker, pi ejecuta lembic upgrade head y seed en cada arranque (ambos idempotentes) y web espera a que pi esté sana.
 - [07] En CI la base 	urnos_test se crea con psql; los tests la migran por su cuenta.
 - [07] `seed_demo` aborta con `SystemExit` si `COOKIE_SECURE=true` (señal de entorno real), porque sus usuarios tienen una contraseña pública.
+- [audit] `register` responde 409 `email_taken` (se prioriza la usabilidad; mitigado con rate limit de 5/minuto).
+- [audit] Refresh simultáneo con la misma cookie en varias pestañas puede cerrar la sesión: el frontend comparte una sola petición por pestaña; no se añade ventana de gracia para no debilitar la detección de reutilización.
+- [audit] Los access tokens (15 min) siguen vigentes tras un reset de contraseña; los refresh sí se revocan.
+- [audit] El rate limit es por IP; detrás de un proxy hay que configurar la IP real (ver README, sección de despliegue).
+- [audit] La rotación de refresh no tiene límite absoluto de vida de la familia.
+- [audit] Se permite confirmar una reserva pendiente cuya hora ya pasó.
+- [audit] El token de verificación viaja en la query de un GET (patrón habitual de enlaces de correo).
+- [audit] `PATCH /users/me` solo permite cambiar `full_name`, no el email; el token de verificación no se liga al email.

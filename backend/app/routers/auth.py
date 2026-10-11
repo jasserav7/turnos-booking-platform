@@ -38,7 +38,8 @@ def _token_response(response: Response, result: auth_service.AuthResult) -> Toke
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterIn, db: DbSession, tasks: BackgroundTasks) -> User:
+@limiter.limit("5/minute")
+def register(request: Request, data: RegisterIn, db: DbSession, tasks: BackgroundTasks) -> User:
     return auth_service.register(db, data, tasks)
 
 
