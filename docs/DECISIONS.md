@@ -71,3 +71,4 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [07] seed_demo solo crea la disponibilidad de un profesional y las reservas de ejemplo si aún no tiene ninguna, para no pisar cambios manuales.
 - [07] En Docker, pi ejecuta lembic upgrade head y seed en cada arranque (ambos idempotentes) y web espera a que pi esté sana.
 - [07] En CI la base 	urnos_test se crea con psql; los tests la migran por su cuenta.
+- [07] `seed_demo` aborta con `SystemExit` si `COOKIE_SECURE=true` (señal de entorno real), porque sus usuarios tienen una contraseña pública.

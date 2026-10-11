@@ -147,7 +147,7 @@ Al arrancar, la API aplica las migraciones y ejecuta `seed` en cada inicio: crea
 | Mailpit (correos de prueba) | http://localhost:8025 |
 | PostgreSQL | `localhost:5433` (usuario, clave y base: `turnos`) |
 
-Para cargar los datos de demostración (opcional, idempotente):
+Para cargar los datos de demostración (opcional, idempotente; se niega a ejecutarse si `COOKIE_SECURE=true`):
 
 ```bash
 docker compose exec api python -m app.scripts.seed_demo
@@ -221,7 +221,7 @@ El workflow [`ci.yml`](.github/workflows/ci.yml) ejecuta todo esto en cada push 
 ## Credenciales de demo
 
 > [!WARNING]
-> Las cuentas `@demo.turnos.local` y la contraseña `Demo12345!` son **solo para demostración local** y son públicas. En cualquier despliegue real: cambia `ADMIN_PASSWORD` y `SECRET_KEY`, usa `COOKIE_SECURE=true` y **no ejecutes `seed_demo`**.
+> Las cuentas `@demo.turnos.local` y la contraseña `Demo12345!` son **solo para demostración local** y son públicas. En cualquier despliegue real: cambia `ADMIN_PASSWORD` y `SECRET_KEY`, usa `COOKIE_SECURE=true` y **no ejecutes `seed_demo`** (el script se niega a correr con `COOKIE_SECURE=true`).
 
 Tras ejecutar `seed_demo`, todos los usuarios tienen la contraseña **`Demo12345!`**:
 
