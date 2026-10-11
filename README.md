@@ -238,8 +238,6 @@ Los datos demo incluyen 5 servicios, disponibilidad semanal para los dos profesi
 
 ## Capturas
 
-<!-- Añadir las imágenes en docs/img/ -->
-
 | | |
 |---|---|
 | ![Inicio de sesión](docs/img/login.png) | ![Reservar una cita](docs/img/booking-flow.png) |
