@@ -80,3 +80,4 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [audit] Se permite confirmar una reserva pendiente cuya hora ya pasó.
 - [audit] El token de verificación viaja en la query de un GET (patrón habitual de enlaces de correo).
 - [audit] `PATCH /users/me` solo permite cambiar `full_name`, no el email; el token de verificación no se liga al email.
+- [ci] Dos INSERT solapados concurrentes pueden terminar en deadlock (40P01) en vez de 23P01; ambos se traducen a 409 `slot_unavailable` (y en transiciones a 409 `invalid_transition`).
