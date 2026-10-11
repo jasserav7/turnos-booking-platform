@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, event
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -437,6 +438,25 @@ def test_concurrent_confirms_only_one_wins(
         app.dependency_overrides.clear()
 
     assert sorted(statuses) == [200, 409]
+
+
+def test_deadlock_on_insert_maps_to_slot_unavailable(
+    client: TestClient, world: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class FakeDeadlock(Exception):
+        sqlstate = "40P01"
+
+    def deadlock(self: Session) -> None:
+        raise OperationalError("INSERT INTO bookings", {}, FakeDeadlock())
+
+    monkeypatch.setattr(Session, "commit", deadlock)
+    response = client.post(
+        f"{API}/bookings",
+        json=_payload(world, tomorrow_at(10)),
+        headers=auth_headers(world["customer"]),
+    )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "slot_unavailable"}
 
 
 def test_bookings_include_names(

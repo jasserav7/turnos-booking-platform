@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import Select, func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, joinedload
 
 from app.core import notifications
@@ -15,6 +15,7 @@ from app.services import catalog
 from app.services.permissions import ensure_roles
 
 EXCLUSION_VIOLATION = "23P01"
+DEADLOCK_DETECTED = "40P01"
 
 
 def _conflict(detail: str) -> HTTPException:
@@ -40,8 +41,19 @@ def _local_midnight_utc(day: date) -> datetime:
     return datetime.combine(day, time.min, tzinfo=tz).astimezone(UTC)
 
 
-def _is_exclusion_violation(exc: IntegrityError) -> bool:
-    return getattr(exc.orig, "sqlstate", None) == EXCLUSION_VIOLATION
+def _is_slot_conflict(exc: DBAPIError) -> bool:
+    """Exclusion violation, or the deadlock Postgres raises when two overlapping inserts race."""
+    return getattr(exc.orig, "sqlstate", None) in (EXCLUSION_VIOLATION, DEADLOCK_DETECTED)
+
+
+def _commit_or_conflict(db: Session, detail: str) -> None:
+    try:
+        db.commit()
+    except DBAPIError as exc:
+        db.rollback()
+        if _is_slot_conflict(exc):
+            raise _conflict(detail) from exc
+        raise
 
 
 def _recipient(user: User) -> notifications.Recipient:
@@ -86,13 +98,7 @@ def create_booking(db: Session, actor: User, data: BookingIn, tasks: BackgroundT
         notes=data.notes,
     )
     db.add(booking)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        if _is_exclusion_violation(exc):
-            raise _conflict("slot_unavailable") from exc
-        raise
+    _commit_or_conflict(db, "slot_unavailable")
     db.refresh(booking)
     tasks.add_task(notifications.notify_booking_created, booking_email_data(db, booking))
     return booking
@@ -134,7 +140,7 @@ def get_booking(
 
 
 def _save(db: Session, booking: Booking) -> Booking:
-    db.commit()
+    _commit_or_conflict(db, "invalid_transition")
     db.refresh(booking)
     return booking
 
