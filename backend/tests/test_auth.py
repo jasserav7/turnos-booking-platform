@@ -75,6 +75,20 @@ def test_register_duplicate_returns_409(
     assert response.json() == {"detail": "email_taken"}
 
 
+def test_register_is_rate_limited(client: TestClient, captured: dict[str, list[str]]) -> None:
+    def register(i: int) -> Response:
+        return client.post(
+            f"{API}/auth/register",
+            json={"email": f"rl{i}@example.com", "password": DEFAULT_PASSWORD, "full_name": "Rl"},
+        )
+
+    for i in range(5):
+        assert register(i).status_code == 201
+    response = register(5)
+    assert response.status_code == 429
+    assert response.json() == {"detail": "rate_limited"}
+
+
 # --- login --------------------------------------------------------------------
 
 

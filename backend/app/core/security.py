@@ -2,6 +2,7 @@ import hashlib
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
+from enum import Enum
 from typing import Any, Literal
 
 import jwt
@@ -19,7 +20,6 @@ RESET_TOKEN_TTL = timedelta(minutes=30)
 TokenType = Literal["access", "verify", "reset"]
 
 _password_hash = PasswordHash((Argon2Hasher(),))
-_dummy_hash: str | None = None
 
 
 def hash_password(password: str) -> str:
@@ -30,11 +30,11 @@ def verify_password(password: str, password_hash: str) -> bool:
     return _password_hash.verify(password, password_hash)
 
 
+_dummy_hash = _password_hash.hash(secrets.token_urlsafe(16))
+
+
 def dummy_verify_password(password: str) -> None:
     """Spend the same time as a real verification to avoid user enumeration by timing."""
-    global _dummy_hash
-    if _dummy_hash is None:
-        _dummy_hash = _password_hash.hash(secrets.token_urlsafe(16))
     _password_hash.verify(password, _dummy_hash)
 
 
@@ -43,17 +43,18 @@ def _encode(
 ) -> str:
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
+        **(extra or {}),
         "sub": subject,
         "type": token_type,
         "iat": now,
         "exp": now + ttl,
-        **(extra or {}),
     }
     return jwt.encode(payload, get_settings().secret_key, algorithm=ALGORITHM)
 
 
 def create_access_token(user_id: uuid.UUID, role: str, ttl: timedelta = ACCESS_TOKEN_TTL) -> str:
-    return _encode(str(user_id), "access", ttl, {"role": str(role)})
+    role_value = role.value if isinstance(role, Enum) else str(role)
+    return _encode(str(user_id), "access", ttl, {"role": role_value})
 
 
 def create_verify_token(user_id: uuid.UUID, ttl: timedelta = VERIFY_TOKEN_TTL) -> str:
