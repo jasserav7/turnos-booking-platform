@@ -203,6 +203,11 @@ def _seed_bookings(db: Session, users: dict[str, User], services: dict[str, Serv
 
 
 def main() -> None:
+    if get_settings().cookie_secure:
+        raise SystemExit(
+            "seed_demo se niega a ejecutarse con COOKIE_SECURE=true: los usuarios demo tienen "
+            "una contraseña pública y no deben existir en un despliegue real."
+        )
     with SessionLocal() as db:
         users = _get_or_create_users(db)
         services = _get_or_create_services(db)
