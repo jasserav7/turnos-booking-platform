@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Hola {{ recipient.name }}:</p>
+<p>La siguiente reserva fue <strong>reprogramada</strong>. Antes era el {{ previous_when }}.</p>
+{% include "_booking_details.html" %}
+<p>Adjuntamos un archivo para actualizar tu calendario.</p>
+{% with href=bookings_url, label="Ver reservas" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

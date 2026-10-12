@@ -1,5 +1,6 @@
 import logging
 import smtplib
+from dataclasses import dataclass
 from email.message import EmailMessage
 from functools import lru_cache
 from pathlib import Path
@@ -22,15 +23,37 @@ _env = Environment(
 )
 
 
+@dataclass(frozen=True)
+class Attachment:
+    filename: str
+    content: bytes
+    maintype: str
+    subtype: str
+
+
 class EmailSender(Protocol):
-    def send(self, to: str, subject: str, html: str, text: str) -> None: ...
+    def send(
+        self,
+        to: str,
+        subject: str,
+        html: str,
+        text: str,
+        attachments: list[Attachment] | None = None,
+    ) -> None: ...
 
 
 class SmtpEmailSender:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def send(self, to: str, subject: str, html: str, text: str) -> None:
+    def send(
+        self,
+        to: str,
+        subject: str,
+        html: str,
+        text: str,
+        attachments: list[Attachment] | None = None,
+    ) -> None:
         s = self._settings
         message = EmailMessage()
         message["Subject"] = subject
@@ -38,6 +61,13 @@ class SmtpEmailSender:
         message["To"] = to
         message.set_content(text)
         message.add_alternative(html, subtype="html")
+        for attachment in attachments or []:
+            message.add_attachment(
+                attachment.content,
+                maintype=attachment.maintype,
+                subtype=attachment.subtype,
+                filename=attachment.filename,
+            )
         with smtplib.SMTP(s.smtp_host, s.smtp_port, timeout=10) as smtp:
             if s.smtp_starttls:
                 smtp.starttls()
@@ -58,10 +88,16 @@ def render(template: str, **context: Any) -> tuple[str, str]:
     return html, text
 
 
-def send_email(to: str, subject: str, template: str, **context: Any) -> None:
+def send_email(
+    to: str,
+    subject: str,
+    template: str,
+    attachments: list[Attachment] | None = None,
+    **context: Any,
+) -> None:
     """Render and send an email; failures are logged and never propagated."""
     try:
         html, text = render(template, subject=subject, **context)
-        get_email_sender().send(to, subject, html, text)
+        get_email_sender().send(to, subject, html, text, attachments)
     except Exception:
         logger.exception("Failed to send %r email to %s", template, to)

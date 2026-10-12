@@ -5,8 +5,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.core.calendar import build_ics
 from app.core.config import get_settings
-from app.core.email import send_email
+from app.core.email import Attachment, send_email
 from app.models import User
 
 WEEKDAYS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
@@ -45,6 +46,9 @@ class BookingEmailData:
     notes: str | None = None
     cancel_reason: str | None = None
     cancelled_by_name: str | None = None
+    previous_starts_at: datetime | None = None
+    status: str = "pending"
+    sequence: int = 0
 
 
 def format_datetime(value: datetime) -> str:
@@ -62,6 +66,11 @@ def _booking_context(data: BookingEmailData) -> dict[str, object]:
         "when": format_datetime(data.starts_at),
         "bookings_url": f"{get_settings().frontend_url}/bookings",
     }
+
+
+def _ics_attachment(data: BookingEmailData) -> list[Attachment]:
+    ics = build_ics(data, data.status, data.sequence)
+    return [Attachment("reserva.ics", ics, "text", "calendar")]
 
 
 def notify_verify_email(user: User, token: str) -> None:
@@ -105,8 +114,24 @@ def notify_booking_confirmed(data: BookingEmailData) -> None:
         data.customer.email,
         f"Tu reserva está confirmada: {data.service_name}",
         "booking_confirmed",
+        attachments=_ics_attachment(data),
         **_booking_context(data),
     )
+
+
+def notify_booking_rescheduled(data: BookingEmailData) -> None:
+    context = _booking_context(data)
+    context["previous_when"] = format_datetime(data.previous_starts_at or data.starts_at)
+    subject = f"Reserva reprogramada: {data.service_name}"
+    for recipient in (data.customer, data.provider):
+        send_email(
+            recipient.email,
+            subject,
+            "booking_rescheduled",
+            attachments=_ics_attachment(data),
+            recipient=recipient,
+            **context,
+        )
 
 
 def notify_booking_cancelled(data: BookingEmailData) -> None:

@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { useBookingsQuery } from '../../api/bookings'
+import { useBookingsQuery, useDownloadCalendarMutation } from '../../api/bookings'
 import type { Booking, BookingStatus } from '../../api/types'
 import { Button, ButtonLink } from '../../components/Button'
 import { CancelBookingDialog } from '../../components/CancelBookingDialog'
+import { Alert } from '../../components/Alert'
+import { Icon } from '../../components/Icon'
 import { PageHeader } from '../../components/PageHeader'
 import { Pagination } from '../../components/Pagination'
+import { RescheduleDialog } from '../../components/RescheduleDialog'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { SelectField } from '../../components/SelectField'
 import { StatusBadge } from '../../components/StatusBadge'
 import { formatDateTime } from '../../lib/dates'
+import { errorMessage } from '../../lib/errors'
 import { BOOKING_STATUSES, STATUS_LABELS } from '../../lib/format'
 
 const PAGE_SIZE = 10
@@ -19,6 +23,8 @@ export default function MyBookingsPage() {
   const [status, setStatus] = useState<BookingStatus | ''>('')
   const [offset, setOffset] = useState(0)
   const [cancelling, setCancelling] = useState<Booking | null>(null)
+  const [rescheduling, setRescheduling] = useState<Booking | null>(null)
+  const calendar = useDownloadCalendarMutation()
   const query = useBookingsQuery({ status: status || undefined, limit: PAGE_SIZE, offset })
 
   return (
@@ -41,6 +47,11 @@ export default function MyBookingsPage() {
         />
       </div>
 
+      {calendar.isError && (
+        <div className="mb-4">
+          <Alert variant="error">{errorMessage(calendar.error)}</Alert>
+        </div>
+      )}
       {query.isPending && <LoadingState label="Cargando reservas…" />}
       {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
       {query.isSuccess && query.data.items.length === 0 && (
@@ -66,9 +77,24 @@ export default function MyBookingsPage() {
                   {booking.cancel_reason && <p className="text-sm text-ink-subtle">Motivo de cancelación: {booking.cancel_reason}</p>}
                 </div>
                 {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                  <Button variant="secondary" size="sm" block={false} onClick={() => setCancelling(booking)}>
-                    Cancelar
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      block={false}
+                      loading={calendar.isPending && calendar.variables === booking.id}
+                      onClick={() => calendar.mutate(booking.id)}
+                    >
+                      <Icon name="calendar" className="h-4 w-4" />
+                      Añadir al calendario
+                    </Button>
+                    <Button variant="secondary" size="sm" block={false} onClick={() => setRescheduling(booking)}>
+                      Reprogramar
+                    </Button>
+                    <Button variant="secondary" size="sm" block={false} onClick={() => setCancelling(booking)}>
+                      Cancelar
+                    </Button>
+                  </div>
                 )}
               </li>
             ))}
@@ -77,6 +103,7 @@ export default function MyBookingsPage() {
         </>
       )}
 
+      <RescheduleDialog booking={rescheduling} onClose={() => setRescheduling(null)} />
       <CancelBookingDialog
         booking={cancelling}
         description="Recuerda que solo puedes cancelar con la antelación mínima permitida."

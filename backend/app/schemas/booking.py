@@ -13,6 +13,10 @@ class BookingIn(BaseModel):
     notes: str | None = Field(default=None, max_length=1000)
 
 
+class BookingRescheduleIn(BaseModel):
+    starts_at: AwareDatetime
+
+
 class BookingCancelIn(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 

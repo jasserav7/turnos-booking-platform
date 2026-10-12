@@ -17,6 +17,7 @@ if not TEST_DATABASE_URL:
     raise RuntimeError("TEST_DATABASE_URL must be set to run tests")
 
 from app.core import email as email_core  # noqa: E402
+from app.core.email import Attachment  # noqa: E402
 from app.core.rate_limit import limiter  # noqa: E402
 from app.core.security import create_access_token, hash_password  # noqa: E402
 from app.db.session import get_db  # noqa: E402
@@ -68,14 +69,22 @@ class SentEmail:
     subject: str
     html: str
     text: str
+    attachments: list[Attachment] = field(default_factory=list)
 
 
 @dataclass
 class FakeEmailSender:
     messages: list[SentEmail] = field(default_factory=list)
 
-    def send(self, to: str, subject: str, html: str, text: str) -> None:
-        self.messages.append(SentEmail(to, subject, html, text))
+    def send(
+        self,
+        to: str,
+        subject: str,
+        html: str,
+        text: str,
+        attachments: list[Attachment] | None = None,
+    ) -> None:
+        self.messages.append(SentEmail(to, subject, html, text, attachments or []))
 
     def to(self, address: str) -> list[SentEmail]:
         return [m for m in self.messages if m.to == address]
