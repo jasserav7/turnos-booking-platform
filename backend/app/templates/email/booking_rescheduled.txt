@@ -1,0 +1,9 @@
+Hola {{ recipient.name }}:
+
+La siguiente reserva fue reprogramada. Antes era el {{ previous_when }}.
+
+{% include "_booking_details.txt" %}
+
+Adjuntamos un archivo para actualizar tu calendario.
+
+Ver reservas: {{ bookings_url }}

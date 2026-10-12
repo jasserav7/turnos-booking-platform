@@ -8,6 +8,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, joinedload
 
 from app.core import notifications
+from app.core.calendar import build_ics
 from app.core.config import get_settings
 from app.models import Booking, BookingStatus, Service, User, UserRole
 from app.schemas.booking import BookingIn
@@ -60,7 +61,9 @@ def _recipient(user: User) -> notifications.Recipient:
     return notifications.Recipient(email=user.email, name=user.full_name)
 
 
-def booking_email_data(db: Session, booking: Booking) -> notifications.BookingEmailData:
+def booking_email_data(
+    db: Session, booking: Booking, previous_starts_at: datetime | None = None
+) -> notifications.BookingEmailData:
     customer = db.get(User, booking.customer_id)
     provider = db.get(User, booking.provider_id)
     service = db.get(Service, booking.service_id)
@@ -76,6 +79,9 @@ def booking_email_data(db: Session, booking: Booking) -> notifications.BookingEm
         notes=booking.notes,
         cancel_reason=booking.cancel_reason,
         cancelled_by_name=cancelled_by.full_name if cancelled_by else None,
+        previous_starts_at=previous_starts_at,
+        status=booking.status.value,
+        sequence=int(booking.updated_at.timestamp()),
     )
 
 
@@ -187,3 +193,59 @@ def complete_booking(db: Session, actor: User, booking_id: uuid.UUID) -> Booking
         raise _conflict("invalid_transition")
     booking.status = BookingStatus.completed
     return _save(db, booking)
+
+
+def reschedule_booking(
+    db: Session,
+    actor: User,
+    booking_id: uuid.UUID,
+    new_starts_at: datetime,
+    tasks: BackgroundTasks,
+) -> Booking:
+    booking = get_booking(db, actor, booking_id, for_update=True)
+    if booking.status not in (BookingStatus.pending, BookingStatus.confirmed):
+        raise _conflict("invalid_transition")
+    if actor.role == UserRole.customer:
+        deadline = booking.starts_at - timedelta(hours=get_settings().cancel_min_hours)
+        if datetime.now(UTC) > deadline:
+            raise _conflict("reschedule_window_closed")
+
+    starts_at = new_starts_at.astimezone(UTC)
+    if starts_at == booking.starts_at:
+        raise _conflict("same_slot")
+    service = catalog.get_bookable(db, booking.provider_id, booking.service_id)
+
+    previous_starts_at, previous_status = booking.starts_at, booking.status
+    # Free the current slot inside this transaction so the new time may overlap the old one
+    # (e.g. moving 30 minutes later); the status is restored if the new slot is invalid.
+    booking.status = BookingStatus.cancelled
+    db.flush()
+    local_day = starts_at.astimezone(ZoneInfo(get_settings().app_timezone)).date()
+    if starts_at not in catalog.compute_slots(
+        db, booking.provider_id, service, local_day, local_day
+    ):
+        booking.status = previous_status
+        db.flush()
+        raise _conflict("slot_unavailable")
+
+    booking.starts_at = starts_at
+    booking.ends_at = starts_at + timedelta(minutes=service.duration_minutes)
+    # A customer move of a confirmed booking needs the professional to confirm again.
+    needs_reconfirmation = (
+        actor.role == UserRole.customer and previous_status == BookingStatus.confirmed
+    )
+    booking.status = BookingStatus.pending if needs_reconfirmation else previous_status
+    booking.reminder_sent_at = None
+    _commit_or_conflict(db, "slot_unavailable")
+    db.refresh(booking)
+    tasks.add_task(
+        notifications.notify_booking_rescheduled,
+        booking_email_data(db, booking, previous_starts_at),
+    )
+    return booking
+
+
+def booking_calendar(db: Session, actor: User, booking_id: uuid.UUID) -> bytes:
+    booking = get_booking(db, actor, booking_id)
+    data = booking_email_data(db, booking)
+    return build_ics(data, data.status, data.sequence)

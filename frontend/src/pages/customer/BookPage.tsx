@@ -3,16 +3,17 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useCreateBookingMutation } from '../../api/bookings'
-import { useProvidersQuery, useSlotsQuery } from '../../api/providers'
+import { useProvidersQuery } from '../../api/providers'
 import { useServicesQuery } from '../../api/services'
 import type { Booking, Provider, Service } from '../../api/types'
 import { Alert } from '../../components/Alert'
 import { Icon } from '../../components/Icon'
 import { Button, ButtonLink } from '../../components/Button'
 import { PageHeader } from '../../components/PageHeader'
+import { SlotPicker } from '../../components/SlotPicker'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { TextAreaField } from '../../components/TextAreaField'
-import { addDays, formatDateTime, formatDayLong, formatTime, today } from '../../lib/dates'
+import { formatDateTime, formatTime, today } from '../../lib/dates'
 import { errorMessage, isApiError } from '../../lib/errors'
 import { formatPrice } from '../../lib/format'
 
@@ -124,75 +125,6 @@ function ProviderStep({
   )
 }
 
-function SlotStep({
-  service,
-  provider,
-  date,
-  onDateChange,
-  selected,
-  onSelect,
-}: {
-  service: Service
-  provider: Provider
-  date: string
-  onDateChange: (date: string) => void
-  selected: string | null
-  onSelect: (slot: string) => void
-}) {
-  const minDate = today()
-  const query = useSlotsQuery({ providerId: provider.id, serviceId: service.id, date })
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="space-y-1">
-          <label htmlFor="booking-date" className="block text-sm font-medium text-ink">
-            Día
-          </label>
-          <input
-            id="booking-date"
-            type="date"
-            min={minDate}
-            value={date}
-            onChange={(event) => event.target.value && onDateChange(event.target.value)}
-            className="min-h-11 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-ink focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus"
-          />
-        </div>
-        <Button variant="secondary" block={false} disabled={date <= minDate} onClick={() => onDateChange(addDays(date, -1))} aria-label="Día anterior">
-          <Icon name="chevron-left" />
-        </Button>
-        <Button variant="secondary" block={false} onClick={() => onDateChange(addDays(date, 1))} aria-label="Día siguiente">
-          <Icon name="chevron-right" />
-        </Button>
-      </div>
-      <p className="text-sm font-medium text-ink-muted">{formatDayLong(date)}</p>
-      {query.isPending && <LoadingState label="Buscando horarios…" />}
-      {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
-      {query.isSuccess && query.data.length === 0 && (
-        <EmptyState title="No hay horarios libres este día">Prueba con otro día.</EmptyState>
-      )}
-      {query.isSuccess && query.data.length > 0 && (
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-8" aria-label="Horarios disponibles">
-          {query.data.map((slot) => (
-            <li key={slot}>
-              <button
-                type="button"
-                aria-pressed={selected === slot}
-                onClick={() => onSelect(slot)}
-                className={`min-h-11 w-full rounded-full border px-2 py-2 text-sm font-semibold tabular-nums transition-[border-color,background-color,color,translate,scale] duration-200 hover:-translate-y-px active:scale-95 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-                  selected === slot ? 'border-accent bg-accent text-on-accent motion-safe:animate-pop' : 'border-line-strong bg-surface text-ink hover:border-accent'
-                }`}
-              >
-                {formatTime(slot)}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
 export default function BookPage() {
   const [service, setService] = useState<Service | null>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
@@ -288,9 +220,9 @@ export default function BookPage() {
                 <Alert variant="error">{errorMessage(mutation.error)}</Alert>
               </div>
             )}
-            <SlotStep
-              service={service}
-              provider={provider}
+            <SlotPicker
+              serviceId={service.id}
+              providerId={provider.id}
               date={date}
               onDateChange={(next) => {
                 setDate(next)

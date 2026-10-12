@@ -13,6 +13,8 @@ const MESSAGES: Record<string, string> = {
   slot_unavailable: 'Ese horario acaba de ocuparse o ya no está disponible. Elige otro.',
   invalid_transition: 'La reserva cambió de estado y ya no admite esta acción. Actualiza la lista.',
   cancellation_window_closed: 'Ya no puedes cancelar esta reserva: el plazo para cancelar terminó.',
+  reschedule_window_closed: 'Ya no puedes reprogramar esta reserva: el plazo para hacerlo terminó.',
+  same_slot: 'Elige un horario distinto al actual.',
   booking_not_found: 'La reserva no existe o no tienes acceso a ella.',
   service_not_found: 'El servicio no existe o está inactivo.',
   provider_not_found: 'El profesional no existe o no ofrece este servicio.',

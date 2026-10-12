@@ -2,11 +2,17 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Response, status
 
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.models import Booking, BookingStatus, User, UserRole
-from app.schemas.booking import BookingCancelIn, BookingIn, BookingListOut, BookingOut
+from app.schemas.booking import (
+    BookingCancelIn,
+    BookingIn,
+    BookingListOut,
+    BookingOut,
+    BookingRescheduleIn,
+)
 from app.services import bookings
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
@@ -64,3 +70,23 @@ def cancel_booking(
 @router.post("/{booking_id}/complete", response_model=BookingOut)
 def complete_booking(booking_id: uuid.UUID, actor: StaffUser, db: DbSession) -> Booking:
     return bookings.complete_booking(db, actor, booking_id)
+
+
+@router.post("/{booking_id}/reschedule", response_model=BookingOut)
+def reschedule_booking(
+    booking_id: uuid.UUID,
+    data: BookingRescheduleIn,
+    actor: CurrentUser,
+    db: DbSession,
+    tasks: BackgroundTasks,
+) -> Booking:
+    return bookings.reschedule_booking(db, actor, booking_id, data.starts_at, tasks)
+
+
+@router.get("/{booking_id}/calendar.ics")
+def booking_calendar(booking_id: uuid.UUID, actor: CurrentUser, db: DbSession) -> Response:
+    return Response(
+        content=bookings.booking_calendar(db, actor, booking_id),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="reserva.ics"'},
+    )
