@@ -1,12 +1,17 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import Select, delete, select
+from sqlalchemy import Select, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import AvailabilityRule, TimeOff, User, UserRole
 from app.schemas.availability import AvailabilityRuleIn, TimeOffIn
 from app.services.permissions import ensure_roles
+
+# Every stored rule and time-off is scanned on each public slot request, so their number is bounded.
+MAX_RULES = 50
+MAX_FUTURE_TIME_OFF = 500
 
 
 def _rules_query(provider_id: uuid.UUID) -> Select[tuple[AvailabilityRule]]:
@@ -26,6 +31,10 @@ def replace_rules(
     db: Session, actor: User, rules: list[AvailabilityRuleIn]
 ) -> list[AvailabilityRule]:
     ensure_roles(actor, UserRole.provider)
+    if len(rules) > MAX_RULES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="too_many_rules"
+        )
     ordered = sorted(rules, key=lambda r: (r.weekday, r.start_time))
     for rule in ordered:
         if rule.end_time <= rule.start_time:
@@ -51,6 +60,13 @@ def list_time_off(db: Session, actor: User) -> list[TimeOff]:
 
 def create_time_off(db: Session, actor: User, data: TimeOffIn) -> TimeOff:
     ensure_roles(actor, UserRole.provider)
+    future = db.scalar(
+        select(func.count())
+        .select_from(TimeOff)
+        .where(TimeOff.provider_id == actor.id, TimeOff.ends_at > datetime.now(UTC))
+    )
+    if (future or 0) >= MAX_FUTURE_TIME_OFF:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="too_many_time_off")
     time_off = TimeOff(provider_id=actor.id, **data.model_dump())
     db.add(time_off)
     db.commit()

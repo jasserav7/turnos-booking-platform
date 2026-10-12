@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
@@ -126,7 +127,11 @@ def collect_report(
 
 
 def _safe(value: str) -> str:
-    """Neutralize spreadsheet formulas: user-controlled text must never be evaluated."""
+    """Neutralize spreadsheet formulas and drop characters XLSX cannot store.
+
+    User-controlled text must never be evaluated, nor make the export fail.
+    """
+    value = ILLEGAL_CHARACTERS_RE.sub("", value)
     return f"'{value}" if value[:1] in ("=", "+", "-", "@", "\t", "\r") else value
 
 

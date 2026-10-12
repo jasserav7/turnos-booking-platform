@@ -18,7 +18,11 @@ export const registerSchema = z
       .string()
       .trim()
       .min(1, 'Ingresa tu nombre.')
-      .max(255, 'El nombre no puede superar 255 caracteres.'),
+      .max(255, 'El nombre no puede superar 255 caracteres.')
+      // Mirrors the backend: no control characters (they break exports such as the XLSX report).
+      .refine((value) => ![...value].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127), {
+        error: 'El nombre contiene caracteres no permitidos.',
+      }),
     email,
     password: newPassword,
     confirm_password: z.string(),

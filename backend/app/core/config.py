@@ -1,6 +1,9 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+MIN_SECRET_KEY_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -26,6 +29,18 @@ class Settings(BaseSettings):
     min_notice_minutes: int = 60
     booking_horizon_days: int = 60
     cancel_min_hours: int = 2
+    max_active_bookings_per_customer: int = 5
+
+    @field_validator("secret_key")
+    @classmethod
+    def _strong_secret_key(cls, value: str) -> str:
+        # Every JWT is signed with this key: a known or short value lets anyone forge sessions.
+        if len(value) < MIN_SECRET_KEY_LENGTH or value.startswith("change-me"):
+            raise ValueError(
+                f"SECRET_KEY must be a random value of at least {MIN_SECRET_KEY_LENGTH} "
+                "characters, not the .env.example placeholder"
+            )
+        return value
 
     @property
     def cors_origins_list(self) -> list[str]:

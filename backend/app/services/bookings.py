@@ -85,8 +85,29 @@ def booking_email_data(
     )
 
 
+def _ensure_booking_capacity(db: Session, actor: User) -> None:
+    """One customer may hold only a few active future bookings, so nobody can hoard a provider."""
+    # Lock the customer row so concurrent requests cannot both pass the count.
+    db.execute(select(User.id).where(User.id == actor.id).with_for_update())
+    active = db.scalar(
+        select(func.count())
+        .select_from(Booking)
+        .where(
+            Booking.customer_id == actor.id,
+            Booking.status.in_((BookingStatus.pending, BookingStatus.confirmed)),
+            Booking.starts_at > datetime.now(UTC),
+        )
+    )
+    if (active or 0) >= get_settings().max_active_bookings_per_customer:
+        raise _conflict("too_many_active_bookings")
+
+
 def create_booking(db: Session, actor: User, data: BookingIn, tasks: BackgroundTasks) -> Booking:
     ensure_roles(actor, UserRole.customer)
+    # Booking emails go to the customer's address, so it must be proven first.
+    if actor.email_verified_at is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="email_not_verified")
+    _ensure_booking_capacity(db, actor)
     service = catalog.get_bookable(db, data.provider_id, data.service_id)
     starts_at = data.starts_at.astimezone(UTC)
     local_day = starts_at.astimezone(ZoneInfo(get_settings().app_timezone)).date()
