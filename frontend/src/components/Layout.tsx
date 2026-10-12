@@ -51,7 +51,7 @@ export function Layout() {
         >
           {initials(user.full_name)}
         </span>
-        <div className={`min-w-0 text-sm leading-tight ${align === 'end' ? 'hidden max-w-36 text-left xl:block' : 'flex-1'}`}>
+        <div className={`min-w-0 text-sm leading-tight ${align === 'end' ? 'hidden max-w-52 text-left xl:block' : 'flex-1'}`}>
           <p className="truncate font-semibold text-ink">{user.full_name}</p>
           <p className="truncate text-ink-subtle">{ROLE_LABELS[user.role]}</p>
         </div>
@@ -59,7 +59,7 @@ export function Layout() {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className={`min-h-9 rounded-full border border-line-strong px-3.5 text-sm font-semibold text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-60 ${focusRing}`}
+          className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border border-line-strong px-3.5 text-sm font-semibold text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-60 ${focusRing}`}
         >
           {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
         </button>
@@ -69,7 +69,7 @@ export function Layout() {
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
       <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4">
           <Link to="/" className={`-m-1 flex items-center gap-2 rounded-lg p-1 ${focusRing}`}>
             <BrandMark />
             <span className="text-lg font-bold tracking-tight text-ink">Turnos</span>
@@ -78,7 +78,7 @@ export function Layout() {
             <nav className="hidden flex-1 items-center gap-1 pl-4 md:flex" aria-label="Principal">
               {items.map((item) => (
                 <NavLink key={item.to} to={item.to} className={linkClass}>
-                  {item.icon && <Icon name={item.icon} className="hidden h-4 w-4 xl:block" />}
+                  {item.icon && <Icon name={item.icon} className="hidden h-4 w-4 2xl:block" />}
                   {item.label}
                 </NavLink>
               ))}
@@ -117,7 +117,7 @@ export function Layout() {
           </div>
         )}
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:py-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:py-10">
         <Outlet />
       </main>
     </div>
