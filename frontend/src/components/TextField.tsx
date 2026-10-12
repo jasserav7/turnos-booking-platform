@@ -12,7 +12,7 @@ export function TextField({ label, error, id, ...props }: TextFieldProps) {
   const errorId = `${inputId}-error`
   return (
     <div className="space-y-1">
-      <label htmlFor={inputId} className="block text-sm font-medium text-ink">
+      <label htmlFor={inputId} className="block text-sm font-semibold text-ink">
         {label}
       </label>
       <input
@@ -20,7 +20,7 @@ export function TextField({ label, error, id, ...props }: TextFieldProps) {
         id={inputId}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
-        className={`block min-h-11 w-full rounded-lg border bg-surface px-3 py-2 text-ink transition-[border-color,box-shadow] duration-150 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus ${
+        className={`block min-h-11 w-full rounded-xl border bg-surface px-3.5 py-2 text-ink transition-[border-color,box-shadow] duration-150 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus ${
           error ? 'border-danger' : 'border-line-strong'
         }`}
       />

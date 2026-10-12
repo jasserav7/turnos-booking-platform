@@ -22,7 +22,7 @@ const notesSchema = z.object({
 type NotesForm = z.infer<typeof notesSchema>
 
 const optionClass = (selected: boolean) =>
-  `w-full rounded-lg border p-4 text-left transition-[border-color,background-color,box-shadow] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+  `relative w-full rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow,translate,scale] duration-200 active:scale-[0.98] motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
     selected ? 'border-accent bg-accent-soft ring-1 ring-accent' : 'border-line bg-surface hover:border-accent'
   }`
 
@@ -42,8 +42,8 @@ function useRevealOnMount<T extends HTMLElement>(enabled: boolean) {
 function Step({ number, title, children }: { number: number; title: string; children: ReactNode }) {
   const ref = useRevealOnMount<HTMLElement>(number > 1)
   return (
-    <section ref={ref} className="scroll-mt-20 rounded-xl bg-surface p-4 ring-1 ring-line sm:p-6" aria-labelledby={`step-${number}`}>
-      <h2 id={`step-${number}`} className="mb-4 flex items-center gap-3 text-lg font-semibold tracking-tight text-ink">
+    <section ref={ref} className="scroll-mt-20 rounded-3xl motion-safe:animate-rise bg-surface p-4 ring-1 ring-line sm:p-6" aria-labelledby={`step-${number}`}>
+      <h2 id={`step-${number}`} className="mb-4 flex items-center gap-3 text-lg font-bold tracking-tight text-ink">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm tabular-nums text-on-accent" aria-hidden="true">
           {number}
         </span>
@@ -57,6 +57,17 @@ function Step({ number, title, children }: { number: number; title: string; chil
   )
 }
 
+function SelectedMark() {
+  return (
+    <span
+      className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-on-accent motion-safe:animate-pop"
+      aria-hidden="true"
+    >
+      <Icon name="check" className="h-3.5 w-3.5" />
+    </span>
+  )
+}
+
 function ServiceStep({ selected, onSelect }: { selected: Service | null; onSelect: (s: Service) => void }) {
   const query = useServicesQuery()
   if (query.isPending) return <LoadingState label="Cargando servicios…" />
@@ -67,10 +78,15 @@ function ServiceStep({ selected, onSelect }: { selected: Service | null; onSelec
       {query.data.map((service) => (
         <li key={service.id}>
           <button type="button" aria-pressed={selected?.id === service.id} className={optionClass(selected?.id === service.id)} onClick={() => onSelect(service)}>
-            <span className="block font-medium text-ink">{service.name}</span>
+            {selected?.id === service.id && <SelectedMark />}
+            <span className="block pr-8 font-bold text-ink">{service.name}</span>
             {service.description && <span className="mt-1 block text-sm text-ink-muted">{service.description}</span>}
-            <span className="mt-2 block text-sm text-ink-subtle">
-              {service.duration_minutes} min · {formatPrice(service.price_cents)}
+            <span className="mt-3 flex items-center justify-between text-sm tabular-nums">
+              <span className="inline-flex items-center gap-1.5 text-ink-subtle">
+                <Icon name="clock" className="h-4 w-4" />
+                {service.duration_minutes} min
+              </span>
+              <span className="font-bold text-accent-ink">{formatPrice(service.price_cents)}</span>
             </span>
           </button>
         </li>
@@ -99,7 +115,8 @@ function ProviderStep({
       {query.data.map((provider) => (
         <li key={provider.id}>
           <button type="button" aria-pressed={selected?.id === provider.id} className={optionClass(selected?.id === provider.id)} onClick={() => onSelect(provider)}>
-            <span className="font-medium text-ink">{provider.full_name}</span>
+            {selected?.id === provider.id && <SelectedMark />}
+            <span className="block pr-8 font-bold text-ink">{provider.full_name}</span>
           </button>
         </li>
       ))}
@@ -138,7 +155,7 @@ function SlotStep({
             min={minDate}
             value={date}
             onChange={(event) => event.target.value && onDateChange(event.target.value)}
-            className="rounded-md border border-line-strong px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-focus"
+            className="min-h-11 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-ink focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus"
           />
         </div>
         <Button variant="secondary" block={false} disabled={date <= minDate} onClick={() => onDateChange(addDays(date, -1))} aria-label="Día anterior">
@@ -162,8 +179,8 @@ function SlotStep({
                 type="button"
                 aria-pressed={selected === slot}
                 onClick={() => onSelect(slot)}
-                className={`min-h-11 w-full rounded-lg border px-2 py-2 text-sm font-medium tabular-nums transition-[border-color,background-color,color] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-                  selected === slot ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-surface text-ink hover:border-accent'
+                className={`min-h-11 w-full rounded-full border px-2 py-2 text-sm font-semibold tabular-nums transition-[border-color,background-color,color,translate,scale] duration-200 hover:-translate-y-px active:scale-95 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
+                  selected === slot ? 'border-accent bg-accent text-on-accent motion-safe:animate-pop' : 'border-line-strong bg-surface text-ink hover:border-accent'
                 }`}
               >
                 {formatTime(slot)}

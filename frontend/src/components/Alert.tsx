@@ -22,9 +22,9 @@ export function Alert({ variant = 'info', children }: AlertProps) {
   return (
     <div
       role={variant === 'error' ? 'alert' : 'status'}
-      className={`flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm leading-relaxed ${STYLES[variant]}`}
+      className={`flex items-start gap-2.5 rounded-xl border motion-safe:animate-rise px-4 py-3 text-sm leading-relaxed ${STYLES[variant]}`}
     >
-      <Icon name={ICONS[variant]} className="mt-0.5 h-4 w-4" />
+      <Icon name={ICONS[variant]} className={`mt-0.5 h-4 w-4 ${variant === 'success' ? 'motion-safe:animate-pop' : ''}`} />
       <div className="min-w-0">{children}</div>
     </div>
   )

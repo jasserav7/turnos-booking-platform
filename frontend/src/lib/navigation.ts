@@ -1,25 +1,27 @@
 import type { UserRole } from '../api/types'
+import type { IconName } from '../components/Icon'
 
 export interface NavItem {
   to: string
   label: string
+  icon?: IconName
 }
 
 export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   customer: [
-    { to: '/book', label: 'Reservar' },
-    { to: '/bookings', label: 'Mis reservas' },
+    { to: '/book', label: 'Reservar', icon: 'calendar' },
+    { to: '/bookings', label: 'Mis reservas', icon: 'list' },
   ],
   provider: [
-    { to: '/agenda', label: 'Mi agenda' },
-    { to: '/availability', label: 'Disponibilidad' },
+    { to: '/agenda', label: 'Mi agenda', icon: 'calendar' },
+    { to: '/availability', label: 'Disponibilidad', icon: 'sliders' },
   ],
   admin: [
-    { to: '/admin/services', label: 'Servicios' },
-    { to: '/admin/providers', label: 'Profesionales' },
-    { to: '/admin/users', label: 'Usuarios' },
-    { to: '/admin/bookings', label: 'Reservas' },
-    { to: '/admin/stats', label: 'Estadísticas' },
+    { to: '/admin/services', label: 'Servicios', icon: 'tag' },
+    { to: '/admin/providers', label: 'Profesionales', icon: 'users' },
+    { to: '/admin/users', label: 'Usuarios', icon: 'users' },
+    { to: '/admin/bookings', label: 'Reservas', icon: 'list' },
+    { to: '/admin/stats', label: 'Estadísticas', icon: 'chart' },
   ],
 }
 
