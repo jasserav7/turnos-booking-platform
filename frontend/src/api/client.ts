@@ -125,3 +125,33 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (!response.ok) throw new ApiError(response.status, errorCode(response.status, data))
   return data as T
 }
+
+export interface Download {
+  blob: Blob
+  filename: string
+}
+
+function filenameFrom(response: Response, fallback: string): string {
+  const header = response.headers.get('Content-Disposition') ?? ''
+  return /filename="([^"]+)"/.exec(header)?.[1] ?? fallback
+}
+
+/** Authenticated file download (same session handling as apiRequest). */
+export async function apiDownload(
+  path: string,
+  query: Query,
+  fallbackName: string,
+  retryOnUnauthorized = true,
+): Promise<Download> {
+  const headers: Record<string, string> = {}
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+  const response = await send(buildPath(path, query), { method: 'GET', headers })
+
+  if (response.status === 401 && retryOnUnauthorized) {
+    const session = await refreshSession()
+    if (session) return apiDownload(path, query, fallbackName, false)
+    throw new ApiError(401, 'session_expired')
+  }
+  if (!response.ok) throw new ApiError(response.status, errorCode(response.status, await readBody(response)))
+  return { blob: await response.blob(), filename: filenameFrom(response, fallbackName) }
+}

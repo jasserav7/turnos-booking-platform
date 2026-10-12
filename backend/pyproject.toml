@@ -19,6 +19,8 @@ dependencies = [
     "email-validator",
     "jinja2",
     "slowapi",
+    "openpyxl",
+    "reportlab",
 ]
 
 [project.optional-dependencies]

@@ -81,3 +81,4 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [audit] El token de verificación viaja en la query de un GET (patrón habitual de enlaces de correo).
 - [audit] `PATCH /users/me` solo permite cambiar `full_name`, no el email; el token de verificación no se liga al email.
 - [ci] Dos INSERT solapados concurrentes pueden terminar en deadlock (40P01) en vez de 23P01; ambos se traducen a 409 `slot_unavailable` (y en transiciones a 409 `invalid_transition`).
+- [reports] `GET /admin/reports` (solo admin) genera CSV (UTF-8 con BOM y `;`), XLSX (openpyxl) y PDF (reportlab); se añadieron esas dos dependencias con autorización del usuario. Rango por defecto: últimos 30 días, máximo 366 días y 10 000 filas; los textos que empiezan por `= + - @` se prefijan con `'` para evitar inyección de fórmulas.

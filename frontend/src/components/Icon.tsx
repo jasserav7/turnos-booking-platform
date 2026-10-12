@@ -16,6 +16,10 @@ const PATHS = {
   tag: 'M3.5 12.2V4.5h7.7l8.8 8.8-7.7 7.7-8.8-8.8zM7.8 8.3h.01',
   sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+  download: 'M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14',
+  'chevron-down': 'M6 9.5l6 6 6-6',
+  'file-text': 'M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zM14 3v5h5M9 13h6M9 17h6',
+  table: 'M4 5h16v14H4zM4 10h16M10 5v14',
   monitor: 'M4 5h16v11H4zM9 20h6M12 16v4',
 } as const
 
