@@ -207,6 +207,38 @@
     text-underline-offset: 3px;
   }
 
+  /* Tailwind's reset leaves buttons with the default arrow; the cursor should announce what a control does. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)),
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Waiting on the server: a button that is busy shows progress rather than inviting another click. */
+  button[aria-busy="true"]:disabled {
+    cursor: progress;
+  }
+
+  /* The page you are already on is not a link to anywhere. */
+  a[aria-current="page"] {
+    cursor: default;
+  }
+
   tbody tr {
     transition: background-color 150ms ease-out;
   }
