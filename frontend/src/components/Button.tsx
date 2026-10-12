@@ -1,10 +1,11 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, Ref } from 'react'
 import { Link, type LinkProps } from 'react-router'
 import { buttonClasses, type ButtonStyleOptions } from '../lib/buttonStyles'
 import { Spinner } from './Spinner'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, ButtonStyleOptions {
   loading?: boolean
+  ref?: Ref<HTMLButtonElement>
 }
 
 export function Button({

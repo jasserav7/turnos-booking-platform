@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useStatsQuery } from '../../api/stats'
 import type { BookingStatus, Stats } from '../../api/types'
 import { PageHeader } from '../../components/PageHeader'
+import { ReportMenu } from '../../components/ReportMenu'
 import { EmptyState, ErrorState, LoadingState } from '../../components/QueryStates'
 import { StatusBadge } from '../../components/StatusBadge'
 import { formatDayLong, formatDayShort } from '../../lib/dates'
@@ -119,7 +120,7 @@ export default function AdminStatsPage() {
 
   return (
     <div>
-      <PageHeader title="Estadísticas" />
+      <PageHeader title="Estadísticas" actions={<ReportMenu />} />
       {query.isPending && <LoadingState label="Cargando estadísticas…" />}
       {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
       {query.isSuccess && (() => {
