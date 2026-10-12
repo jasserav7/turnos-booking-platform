@@ -19,7 +19,7 @@ export function TextAreaField({ label, error, id, rows = 3, ...props }: TextArea
         id={fieldId}
         rows={rows}
         aria-invalid={Boolean(error)}
-        className={`block min-h-11 w-full rounded-lg border bg-surface px-3 py-2 text-ink transition-[border-color,box-shadow] duration-150 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus ${
+        className={`block min-h-11 w-full rounded-xl border bg-surface px-3.5 py-2 text-ink transition-[border-color,box-shadow] duration-150 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus ${
           error ? 'border-danger' : 'border-line-strong'
         }`}
       />
