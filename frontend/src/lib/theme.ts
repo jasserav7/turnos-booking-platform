@@ -15,7 +15,13 @@ export function readPreference(): ThemePreference {
 
 export function applyPreference(preference: ThemePreference): void {
   const dark = preference === 'dark' || (preference === 'system' && media().matches)
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  const root = document.documentElement
+  const next = dark ? 'dark' : 'light'
+  if (root.dataset.theme && root.dataset.theme !== next) {
+    root.classList.add('theme-switching')
+    window.setTimeout(() => root.classList.remove('theme-switching'), 320)
+  }
+  root.dataset.theme = next
   try {
     if (preference === 'system') localStorage.removeItem(STORAGE_KEY)
     else localStorage.setItem(STORAGE_KEY, preference)

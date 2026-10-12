@@ -59,7 +59,7 @@ export function Layout() {
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border border-line-strong px-3.5 text-sm font-semibold text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:opacity-60 ${focusRing}`}
+          className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border border-line-strong px-3.5 text-sm font-semibold text-ink-muted transition-[background-color,color,translate,scale] duration-200 hover:bg-sunken hover:text-ink active:scale-[0.97] disabled:opacity-60 ${focusRing}`}
         >
           {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
         </button>
@@ -70,8 +70,8 @@ export function Layout() {
     <div className="flex min-h-dvh flex-col bg-canvas">
       <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4">
-          <Link to="/" className={`-m-1 flex items-center gap-2 rounded-lg p-1 ${focusRing}`}>
-            <BrandMark />
+          <Link to="/" className={`group -m-1 flex items-center gap-2 rounded-lg p-1 ${focusRing}`}>
+            <BrandMark className="h-8 w-8 transition-transform duration-300 ease-out group-hover:-rotate-6 motion-reduce:transition-none" />
             <span className="text-lg font-bold tracking-tight text-ink">Turnos</span>
           </Link>
           {status !== 'loading' && (
@@ -104,7 +104,7 @@ export function Layout() {
           </div>
         </div>
         {menuOpen && (
-          <div id="mobile-menu" className="space-y-3 border-t border-line px-4 pb-4 pt-3 md:hidden">
+          <div id="mobile-menu" className="space-y-3 motion-safe:animate-rise border-t border-line px-4 pb-4 pt-3 md:hidden">
             <nav className="space-y-1" aria-label="Principal móvil">
               {items.map((item) => (
                 <NavLink key={item.to} to={item.to} className={linkClass}>
@@ -117,7 +117,7 @@ export function Layout() {
           </div>
         )}
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:py-10">
+      <main key={location.pathname} className="motion-safe:animate-fade mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:py-10">
         <Outlet />
       </main>
     </div>

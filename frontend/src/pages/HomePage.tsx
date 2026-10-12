@@ -6,6 +6,7 @@ import { ButtonLink } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { EmptyState, ErrorState, LoadingState } from '../components/QueryStates'
 import { formatPrice } from '../lib/format'
+import { stagger } from '../lib/motion'
 import { NAV_BY_ROLE, ROLE_LABELS } from '../lib/navigation'
 
 function ServicesList() {
@@ -18,8 +19,12 @@ function ServicesList() {
   }
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {data.map((service) => (
-        <li key={service.id} className="flex flex-col rounded-2xl bg-surface p-5 ring-1 ring-line transition-shadow duration-200 hover:shadow-lift">
+      {data.map((service, index) => (
+        <li
+          key={service.id}
+          style={stagger(index)}
+          className="flex flex-col rounded-2xl bg-surface p-5 ring-1 ring-line transition-[box-shadow,translate] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lift motion-safe:animate-rise motion-reduce:transition-none"
+        >
           <p className="text-lg font-bold tracking-tight text-ink">{service.name}</p>
           {service.description && <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-muted">{service.description}</p>}
           <div className="mt-auto flex items-center justify-between gap-3 pt-5">
@@ -44,9 +49,9 @@ const STEPS = [
 function HowItWorks() {
   return (
     <ol className="relative space-y-6 rounded-3xl bg-accent-soft p-6 sm:p-8" aria-label="Cómo reservar">
-      <span className="absolute bottom-14 left-[2.4rem] top-14 w-px bg-accent/30 sm:left-[3.15rem]" aria-hidden="true" />
+      <span className="absolute bottom-14 left-[2.4rem] top-14 w-px origin-top bg-accent/30 motion-safe:animate-grow sm:left-[3.15rem]" style={{ animationDelay: '200ms' }} aria-hidden="true" />
       {STEPS.map((step, index) => (
-        <li key={step.title} className="relative flex gap-4">
+        <li key={step.title} style={stagger(index + 1, 140)} className="relative flex gap-4 motion-safe:animate-rise">
           <span className="z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold tabular-nums text-on-accent shadow-card">
             {index + 1}
           </span>
@@ -56,7 +61,7 @@ function HowItWorks() {
           </div>
         </li>
       ))}
-      <li className="relative flex gap-4">
+      <li style={stagger(4, 140)} className="relative flex gap-4 motion-safe:animate-rise">
         <span className="z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-accent-ink ring-1 ring-accent/40">
           <Icon name="check" className="h-4 w-4" />
         </span>
@@ -112,13 +117,13 @@ export default function HomePage() {
       </section>
       <nav aria-label="Accesos rápidos">
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {NAV_BY_ROLE[user.role].map((item) => (
-            <li key={item.to}>
+          {NAV_BY_ROLE[user.role].map((item, index) => (
+            <li key={item.to} style={stagger(index)} className="motion-safe:animate-rise">
               <Link
                 to={item.to}
-                className="group flex min-h-20 items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-line transition-shadow duration-200 hover:shadow-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                className="group flex min-h-20 items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-line transition-[box-shadow,translate] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lift active:translate-y-0 motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-soft-ink">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-soft-ink transition-colors duration-300 group-hover:bg-accent group-hover:text-on-accent">
                   <Icon name={item.icon ?? 'chevron-right'} className="h-5 w-5" />
                 </span>
                 <span className="flex-1 font-bold text-ink">{item.label}</span>

@@ -127,6 +127,38 @@
   --shadow-overlay: 0 12px 32px -8px hsl(var(--shadow-color) / 0.28), 0 4px 8px -4px hsl(var(--shadow-color) / 0.16);
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-rise: rise 420ms var(--ease-out-quint) both;
+  --animate-fade: fade 240ms ease-out both;
+  --animate-pop: pop 380ms var(--ease-spring) both;
+  --animate-grow: grow 800ms var(--ease-out-quint) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
 }
 
 @layer base {
@@ -175,6 +207,14 @@
     text-underline-offset: 3px;
   }
 
+  tbody tr {
+    transition: background-color 150ms ease-out;
+  }
+
+  tbody tr:hover {
+    background-color: color-mix(in oklch, var(--sunken) 55%, transparent);
+  }
+
   /* Theme switches recolor instantly; color transitions on controls stay short. */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -182,6 +222,21 @@
     *::after {
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/* Theme switch crossfades colors for a moment instead of snapping (class set in lib/theme.ts). */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-switching,
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition:
+      background-color 280ms ease,
+      border-color 280ms ease,
+      color 280ms ease,
+      fill 280ms ease,
+      stroke 280ms ease !important;
   }
 }
 
