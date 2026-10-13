@@ -2,6 +2,7 @@ import os
 import uuid
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 import pytest
 from alembic.config import Config
@@ -104,6 +105,7 @@ def make_user(session: Session) -> Callable[..., User]:
         password: str = DEFAULT_PASSWORD,
         is_active: bool = True,
         email: str | None = None,
+        verified: bool = True,
     ) -> User:
         user = User(
             email=email or f"{uuid.uuid4().hex}@example.com",
@@ -111,6 +113,7 @@ def make_user(session: Session) -> Callable[..., User]:
             full_name="Test User",
             role=role,
             is_active=is_active,
+            email_verified_at=datetime.now(UTC) if verified else None,
         )
         session.add(user)
         session.flush()

@@ -18,8 +18,12 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
+# No C0 control characters or DEL: they break downstream formats such as XLSX.
+PRINTABLE_TEXT = r"^[^\x00-\x1f\x7f]+$"
+
+
 class UserUpdateIn(BaseModel):
-    full_name: str = Field(min_length=1, max_length=255)
+    full_name: str = Field(min_length=1, max_length=255, pattern=PRINTABLE_TEXT)
 
 
 class AdminUserUpdateIn(BaseModel):

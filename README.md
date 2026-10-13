@@ -135,8 +135,11 @@ Requisitos: Docker y Docker Compose.
 git clone https://github.com/jasserav7/turnos-booking-platform.git
 cd turnos-booking-platform
 cp .env.example .env        # PowerShell: Copy-Item .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(48))"   # pega el resultado en SECRET_KEY de .env
 docker compose up --build
 ```
+
+La API se niega a arrancar si `SECRET_KEY` tiene menos de 32 caracteres o sigue siendo el placeholder de `.env.example`.
 
 Al arrancar, la API aplica las migraciones y ejecuta `seed` en cada inicio: crea el admin de `ADMIN_EMAIL` / `ADMIN_PASSWORD` solo si no existe y nunca sobrescribe la contraseña de uno existente.
 

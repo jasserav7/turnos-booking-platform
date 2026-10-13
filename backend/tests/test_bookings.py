@@ -302,6 +302,7 @@ def committed_world() -> Iterator[dict[str, Any]]:
                 password_hash="x",
                 full_name="Customer",
                 role=UserRole.customer,
+                email_verified_at=datetime.now(UTC),
             )
             for i in range(2)
         ]
