@@ -90,3 +90,4 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [audit-run1] Un profesional puede tener como máximo 50 reglas de disponibilidad (`422 too_many_rules`) y 500 bloqueos futuros (`409 too_many_time_off`). No se reescribió `generate_slots`: con estos topes el coste por petición queda acotado.
 - Vercel proxies /api/v1/* to the Render API (frontend/vercel.json) so the SameSite=Lax refresh cookie stays same-site; VITE_API_URL=/api/v1 in production.
 - Vercel project `turnos-web` (root `frontend`) created with the CLI; `VITE_API_URL=/api/v1` and `VITE_APP_TIMEZONE` set for Production/Preview; first deploy at https://turnos-web-eta.vercel.app.
+- Render start command moved to `backend/start.sh` (`dockerCommand: sh ./start.sh`) because the quoted `sh -c "..."` was executed as a single program name (exit 127).
