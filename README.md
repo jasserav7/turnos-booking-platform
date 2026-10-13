@@ -28,7 +28,7 @@ El registro público solo crea clientes. El primer admin sale del script `seed`;
 
 - **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0 (síncrono), Alembic, Pydantic v2, PostgreSQL 16, PyJWT, argon2 (`pwdlib`), slowapi, Jinja2 y `smtplib` para el correo.
 - **Frontend:** Vite, React, TypeScript estricto, Tailwind CSS, React Router, TanStack Query, react-hook-form + zod, date-fns. Sin librerías de componentes. Los tipos de la API se generan con `openapi-typescript` (`frontend/src/api/schema.d.ts`, versionado).
-- **Infra:** Docker Compose (`db`, `mailpit`, `api`, `web`) y GitHub Actions.
+- **Infra:** Docker Compose (`db`, `mailpit`, `api`, `web`) y GitHub Actions. En producción: Vercel (web), Render (API), Neon (PostgreSQL) y Brevo (SMTP); ver [Despliegue en producción](#despliegue-en-producción).
 
 ## Decisiones técnicas destacadas
 
@@ -192,6 +192,38 @@ Controles que resistieron la auditoría: JWT con algoritmo fijado y tipo de toke
 ## Despliegue detrás de un proxy
 
 El rate limit (login, registro y recuperación de contraseña) se aplica por IP de cliente. Detrás de un proxy inverso o balanceador, todas las peticiones llegan con la IP del proxy: configura uvicorn con `--proxy-headers --forwarded-allow-ips=<IP del proxy>` (o equivalente) para que se use la IP real y no se limite a todos los usuarios a la vez.
+
+## Despliegue en producción
+
+Todo se despliega desde `main`: cada merge redespliega la web y la API.
+
+```mermaid
+flowchart LR
+    U[Navegador] -->|HTTPS| V["Vercel<br/>frontend estático"]
+    V -->|"rewrite /api/v1/*"| R["Render<br/>API en Docker"]
+    R -->|SQLAlchemy| N[("Neon<br/>PostgreSQL")]
+    R -->|"SMTP 2525"| B[Brevo]
+```
+
+| Pieza | Servicio | Configuración |
+|---|---|---|
+| Web | Vercel | Proyecto con *Root Directory* `frontend`. [`frontend/vercel.json`](frontend/vercel.json) reenvía `/api/v1/*` a la API y sirve `index.html` para el resto de rutas. |
+| API | Render (Docker) | Blueprint en [`render.yaml`](render.yaml); el servicio despliega la rama `main`. Arranca con [`backend/start.sh`](backend/start.sh): migra, ejecuta `seed` y lanza uvicorn con `--proxy-headers`. |
+| Base de datos | Neon | `DATABASE_URL` con el formato `postgresql+psycopg://usuario:clave@host/db?sslmode=require`. |
+| Correo | Brevo (SMTP) | `smtp-relay.brevo.com` en el puerto **2525** con STARTTLS, porque el plan gratuito de Render restringe los puertos SMTP habituales (25, 465 y 587). |
+
+**Por qué la web llama a `/api/v1` en vez de a la URL de la API.** El proxy de Vercel hace que el navegador hable siempre con el mismo origen, así la cookie de refresh (`SameSite=Lax`, `httpOnly`) se envía sin problemas de terceros. Por eso en Vercel `VITE_API_URL=/api/v1`.
+
+**Variables por servicio**
+- **Vercel:** `VITE_API_URL=/api/v1` y `VITE_APP_TIMEZONE`.
+- **Render:** `DATABASE_URL`, `SECRET_KEY` (la genera Render), `COOKIE_SECURE=true`, `APP_TIMEZONE`, `CORS_ORIGINS` y `FRONTEND_URL` (la URL de Vercel, sin barra final y sin espacios), `ADMIN_EMAIL`, `ADMIN_PASSWORD` y las `SMTP_*`.
+
+**Cosas a tener en cuenta**
+- `ADMIN_PASSWORD` solo se usa cuando el admin **no existe**; cambiarla después en Render no modifica la contraseña de un admin ya creado.
+- No hay un endpoint para reenviar el correo de verificación: si un usuario se registró antes de configurar el SMTP, hay que verificarlo a mano (`UPDATE users SET email_verified_at = now() WHERE ...`).
+- Un remitente `@gmail.com` en Brevo puede acabar en spam; lo recomendable en producción es un dominio propio con DKIM y DMARC.
+- En el plan gratuito de Render la API se suspende tras un rato sin tráfico y la primera petición tarda entre 30 y 60 segundos.
+- Una pestaña abierta durante un despliegue pide archivos con hash que ya no existen; la web se recarga sola una vez y, si persiste, muestra una pantalla de error con un botón para recargar.
 
 ## Puesta en marcha sin Docker
 
