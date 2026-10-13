@@ -88,3 +88,4 @@ Una línea por decisión ambigua: `- [fase] decisión — motivo`.
 - [audit-run1] Crear una reserva exige correo verificado (`403 email_not_verified`) y un máximo de `MAX_ACTIVE_BOOKINGS_PER_CUSTOMER` (5) reservas pendientes o confirmadas futuras por cliente (`409 too_many_active_bookings`); el conteo bloquea la fila del usuario para evitar carreras.
 - [audit-run1] `full_name` rechaza caracteres de control C0 y DEL; el reporte además elimina los caracteres que XLSX no admite.
 - [audit-run1] Un profesional puede tener como máximo 50 reglas de disponibilidad (`422 too_many_rules`) y 500 bloqueos futuros (`409 too_many_time_off`). No se reescribió `generate_slots`: con estos topes el coste por petición queda acotado.
+- Vercel proxies /api/v1/* to the Render API (frontend/vercel.json) so the SameSite=Lax refresh cookie stays same-site; VITE_API_URL=/api/v1 in production.
