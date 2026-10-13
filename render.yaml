@@ -9,7 +9,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     # Aplica migraciones y crea el admin en cada arranque, y confía en la IP real que envía el proxy de Render.
-    dockerCommand: sh -c "alembic upgrade head && python -m app.scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'"
+    dockerCommand: sh ./start.sh
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:
