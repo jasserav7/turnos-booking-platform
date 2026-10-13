@@ -3,15 +3,24 @@
 [![CI](https://github.com/jasserav7/turnos-booking-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/jasserav7/turnos-booking-platform/actions/workflows/ci.yml)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 
-Aplicación web multi-rol donde los clientes reservan citas con profesionales. Incluye disponibilidad semanal, bloqueos, flujo de estados de la reserva, correos transaccionales, recordatorios y un panel de administración. Tema claro/oscuro y diseño responsive.
+Aplicación web multi-rol donde los clientes reservan citas con profesionales. Incluye disponibilidad semanal, bloqueos, reprogramación, exportación a calendario (`.ics`), flujo de estados de la reserva, correos transaccionales, recordatorios y un panel de administración con métricas y reportes descargables (CSV, Excel y PDF). Tema claro/oscuro y diseño responsive.
+
+![Reservar una cita](docs/img/booking-flow.png)
+
+**En resumen**
+- Tres roles (cliente, profesional, admin) con autorización en el router y en el servicio.
+- La base de datos garantiza que no haya dobles reservas, incluso con peticiones simultáneas.
+- Sesiones con refresh tokens rotados y detección de reutilización.
+- Auditoría de seguridad con verificación independiente de cada hallazgo; los problemas confirmados están corregidos y cubiertos por tests ([ver sección](#seguridad)).
+- 126 tests de backend, CI con GitHub Actions y arranque completo con un solo `docker compose up`.
 
 ## Funcionalidades por rol
 
 | Rol | Funcionalidades |
 |---|---|
-| **Cliente** | Registro y verificación de correo, recuperación de contraseña, ver servicios y profesionales, elegir un horario libre, reservar, ver sus reservas y cancelarlas hasta `CANCEL_MIN_HOURS` antes. |
+| **Cliente** | Registro y verificación de correo, recuperación de contraseña, ver servicios y profesionales, elegir un horario libre, reservar (con el correo verificado), ver sus reservas, **reprogramarlas**, **añadirlas a su calendario (`.ics`)** y cancelarlas hasta `CANCEL_MIN_HOURS` antes. |
 | **Profesional** | Gestionar su disponibilidad semanal y bloqueos (`time_off`), ver su agenda por día o semana, confirmar, cancelar y completar las reservas que le corresponden. |
-| **Admin** | CRUD de servicios (desactivar en lugar de borrar), asignar servicios a profesionales, gestionar usuarios (rol, activo), ver todas las reservas y métricas. |
+| **Admin** | CRUD de servicios (desactivar en lugar de borrar), asignar servicios a profesionales, gestionar usuarios (rol, activo), ver todas las reservas y métricas, y **descargar reportes de reservas** en CSV, Excel o PDF para el rango de fechas que elija. |
 
 El registro público solo crea clientes. El primer admin sale del script `seed`; los profesionales los crea o promueve un admin.
 
@@ -29,6 +38,10 @@ El registro público solo crea clientes. El primer admin sale del script `seed`;
 - **Correos fuera de la transacción.** Las notificaciones se envían después del `commit`; un fallo de SMTP nunca revierte una reserva.
 - **Horas en UTC, reglas en zona local.** La base guarda `timestamptz` en UTC; la disponibilidad se interpreta en `APP_TIMEZONE` (por defecto `America/Bogota`).
 - **Autorización en dos capas:** `require_roles(...)` en los routers y comprobación de propiedad en los servicios.
+- **Reprogramar sin romper la regla anti doble reserva.** El horario actual se libera dentro de la misma transacción para permitir corrimientos que se solapan con el propio; si el nuevo horario no es válido, se restaura el estado y nada se guarda. Si un cliente mueve una reserva ya confirmada, vuelve a `pending` para que el profesional la reconfirme.
+- **Calendario `.ics` sin dependencias.** Se genera según RFC 5545, con un identificador estable por reserva y un número de secuencia: al reprogramar, el evento del calendario del usuario se actualiza en vez de duplicarse. También viaja adjunto en los correos de confirmación y reprogramación.
+- **Reportes seguros.** Los CSV y XLSX neutralizan fórmulas (`=`, `+`, `-`, `@`) y descartan los caracteres que XLSX no admite, de modo que ningún dato de usuario se ejecuta ni rompe la exportación.
+- **Límites contra el abuso.** Máximo de reservas activas por cliente, reglas de disponibilidad y bloqueos acotados por profesional, y reservar exige correo verificado.
 
 Las decisiones ambiguas están registradas en [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
@@ -162,6 +175,20 @@ Para enviar los recordatorios de reservas próximas (pensado para un cron):
 docker compose exec api python -m app.jobs.send_reminders
 ```
 
+## Seguridad
+
+El proyecto pasó por una auditoría de seguridad estructurada de código fuente y pruebas locales acotadas en un entorno aislado (sin red y con datos ficticios). Cada hallazgo lo verificó de forma independiente un segundo revisor, y todo lo confirmado está corregido y cubierto por tests de regresión. Quedan documentadas, sin corregir en el código, tres observaciones que dependen de cómo se despliegue: el rate limit detrás de un proxy (ver la sección siguiente), el envío de correos en segundo plano con un servidor SMTP lento y la exposición de los puertos de `docker-compose.yml` en la red local.
+
+| Hallazgo | Corrección |
+|---|---|
+| Un cliente podía acaparar todos los horarios de un profesional con reservas pendientes ilimitadas | Tope de reservas activas por cliente (`MAX_ACTIVE_BOOKINGS_PER_CUSTOMER`) con bloqueo de fila |
+| Cuentas sin verificar podían disparar correos de reserva a cualquier dirección | Reservar exige correo verificado |
+| Un nombre con caracteres de control rompía el reporte Excel del admin | Validación del nombre y limpieza en el reporte |
+| Coste del endpoint público de horarios controlable por un profesional | Topes de reglas y bloqueos por profesional |
+| `SECRET_KEY` débil o de ejemplo aceptada al arrancar | La API no arranca con una clave de menos de 32 caracteres o con el placeholder |
+
+Controles que resistieron la auditoría: JWT con algoritmo fijado y tipo de token verificado, rol leído de la base de datos en cada petición, aislamiento de reservas por dueño, rotación de refresh tokens con detección de reutilización, tokens de reset ligados a la contraseña, escapado de HTML y de iCalendar, y access token solo en memoria en el frontend.
+
 ## Despliegue detrás de un proxy
 
 El rate limit (login, registro y recuperación de contraseña) se aplica por IP de cliente. Detrás de un proxy inverso o balanceador, todas las peticiones llegan con la IP del proxy: configura uvicorn con `--proxy-headers --forwarded-allow-ips=<IP del proxy>` (o equivalente) para que se use la IP real y no se limite a todos los usuarios a la vez.
@@ -196,7 +223,7 @@ Se definen en `.env` (plantilla en [`.env.example`](.env.example)). Nada de secr
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` / `TEST_DATABASE_URL` | Conexión a la base principal y a la de tests. |
-| `SECRET_KEY` | Clave para firmar los JWT. **Cámbiala en producción** (larga y aleatoria). |
+| `SECRET_KEY` | Clave para firmar los JWT: aleatoria y de al menos 32 caracteres (la API no arranca con el placeholder). **Una distinta en cada entorno.** |
 | `APP_TIMEZONE` | Zona horaria de las reglas de disponibilidad (`America/Bogota`). |
 | `CORS_ORIGINS` | Orígenes permitidos, separados por comas. |
 | `COOKIE_SECURE` | `true` en producción (HTTPS) para la cookie de refresh. |
@@ -205,7 +232,8 @@ Se definen en `.env` (plantilla en [`.env.example`](.env.example)). Nada de secr
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credenciales del primer admin creado por `seed`. **Cambia la contraseña en producción.** |
 | `MIN_NOTICE_MINUTES` | Antelación mínima para reservar (60). |
 | `BOOKING_HORIZON_DAYS` | Horizonte máximo de reserva (60). |
-| `CANCEL_MIN_HOURS` | Horas mínimas antes de la cita para que el cliente cancele (2). |
+| `CANCEL_MIN_HOURS` | Horas mínimas antes de la cita para que el cliente cancele o reprograme (2). |
+| `MAX_ACTIVE_BOOKINGS_PER_CUSTOMER` | Máximo de reservas pendientes o confirmadas futuras por cliente (5). |
 | `VITE_API_URL`, `VITE_APP_TIMEZONE` | Frontend: URL de la API y zona horaria. |
 
 ## Tests y calidad
@@ -249,13 +277,15 @@ Los datos demo incluyen 5 servicios, disponibilidad semanal para los dos profesi
 |---|---|
 | ![Inicio de sesión](docs/img/login.png) | ![Reservar una cita](docs/img/booking-flow.png) |
 | ![Mis reservas](docs/img/my-bookings.png) | ![Agenda del profesional](docs/img/provider-agenda.png) |
-| ![Panel de administración](docs/img/admin-dashboard.png) | ![Tema oscuro](docs/img/dark-mode.png) |
+| ![Reprogramar una reserva](docs/img/reschedule.png) | ![Panel de administración](docs/img/admin-dashboard.png) |
+| ![Descarga de reportes](docs/img/reports.png) | ![Tema oscuro](docs/img/dark-mode.png) |
 
 ## Roadmap
 
 - Pasarela de pagos y depósitos al reservar.
 - Recordatorios por SMS / WhatsApp.
-- Sincronización con Google Calendar / iCal.
+- Sincronización bidireccional con Google Calendar (hoy se exporta un `.ics` por reserva).
+- Lista de espera: avisar al cliente cuando se libera un horario.
 - Reseñas y valoraciones de los profesionales.
 - Disponibilidad por fechas concretas y reservas recurrentes.
 - Internacionalización (i18n) y zona horaria por usuario.
