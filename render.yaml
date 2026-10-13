@@ -1,0 +1,43 @@
+# Render Blueprint: API en el plan gratuito, con Postgres externo (Neon).
+# Los valores con `sync: false` los introduces tú en el panel de Render al crear el Blueprint;
+# nunca se guardan en el repositorio.
+services:
+  - type: web
+    name: turnos-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Aplica migraciones y crea el admin en cada arranque, y confía en la IP real que envía el proxy de Render.
+    dockerCommand: sh -c "alembic upgrade head && python -m app.scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'"
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL # postgresql+psycopg://usuario:clave@host/db?sslmode=require
+        sync: false
+      - key: SECRET_KEY # aleatoria y de 44 caracteres; la genera Render
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: APP_TIMEZONE
+        value: America/Bogota
+      - key: CORS_ORIGINS # URL del frontend en Vercel, p. ej. https://turnos.vercel.app
+        sync: false
+      - key: FRONTEND_URL # la misma URL del frontend
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: SMTP_STARTTLS
+        value: "true"
