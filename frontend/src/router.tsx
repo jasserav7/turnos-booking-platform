@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { createBrowserRouter } from 'react-router'
 import { GuestRoute, ProtectedRoute } from './auth/ProtectedRoute'
 import { Layout } from './components/Layout'
+import { RouteError } from './components/RouteError'
 import { FullPageSpinner } from './components/Spinner'
 import ForbiddenPage from './pages/ForbiddenPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -12,12 +13,36 @@ import RegisterPage from './pages/RegisterPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 
+const RELOAD_KEY = 'chunk-reload-at'
+
+// A new deploy renames the hashed chunks, so a tab opened before it fails to import them.
+// Reload once (at most every 10s) to pick up the new index.html; otherwise surface the error.
+function reloadOnce(): boolean {
+  try {
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0)
+    if (Date.now() - last < 10_000) return false
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
+  } catch {
+    return false
+  }
+  window.location.reload()
+  return true
+}
+
 // Role sections are loaded on demand to keep the initial bundle small.
-const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({ Component: (await load()).default })
+const page = (load: () => Promise<{ default: ComponentType }>) => async () => {
+  try {
+    return { Component: (await load()).default }
+  } catch (error) {
+    if (reloadOnce()) return new Promise<never>(() => {})
+    throw error
+  }
+}
 
 export const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <RouteError />,
     hydrateFallbackElement: <FullPageSpinner />,
     children: [
       { index: true, element: <HomePage /> },
